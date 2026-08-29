@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "titlescreen.h"
 #include "fileops.h"
 #include "setup.h"
+#include "tts_toggle.h"
 #include "options.h"
 
 #include <string.h>
@@ -76,16 +77,16 @@ void DisplayHighScores(int level)
     while (!finished)
     {
         /* Check for user events: */
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     {
                         cleanup();
                     }
 
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     /* "Stop" button - go to main menu: */
                     {
                         if (T4K_inRect(stop_rect, event.button.x, event.button.y ))
@@ -123,7 +124,7 @@ void DisplayHighScores(int level)
                     }
 
 
-                case SDL_KEYDOWN:
+                case SDL_EVENT_KEY_DOWN:
                     {
                         finished = 1;
                         playsound(SND_TOCK);
@@ -190,7 +191,7 @@ void DisplayHighScores(int level)
                     T4K_DrawButton(&button_rect, 15, 0, 0, 32, 192);
                     /* Now blit text and free surface: */
                     SDL_BlitSurface(srfc, NULL, screen, &text_rect);
-                    SDL_FreeSurface(srfc);
+                    SDL_DestroySurface(srfc);
                     srfc = NULL;
                 }
 
@@ -236,7 +237,7 @@ void DisplayHighScores(int level)
                     text_rect.w = srfc->w;
                     text_rect.h = srfc->h;
                     SDL_BlitSurface(srfc, NULL, screen, &text_rect);
-                    SDL_FreeSurface(srfc);
+                    SDL_DestroySurface(srfc);
                     srfc = NULL;
                     /* note where score table will start: */
                     score_table_y = text_rect.y + text_rect.h;
@@ -263,7 +264,7 @@ void DisplayHighScores(int level)
 
                 /* Clear out old surfaces and update: */
                 if (score_surfs[i])               /* this should not happen! */
-                    SDL_FreeSurface(score_surfs[i]);
+                    SDL_DestroySurface(score_surfs[i]);
                 if (HS_Score(diff_level, i) == Opts_LastScore() && frame % 5 < 2)
                     score_surfs[i] = T4K_BlackOutline(N_(score_strings[i]), player_font_size, &yellow);
                 else
@@ -283,7 +284,7 @@ void DisplayHighScores(int level)
                 score_rects[i].w = max_width;
 
                 SDL_BlitSurface(score_surfs[i], NULL, screen, &score_rects[i]);
-                SDL_FreeSurface(score_surfs[i]);
+                SDL_DestroySurface(score_surfs[i]);
                 score_surfs[i] = NULL;
             }
             strcat(tts_temp,". Press space or escape to return to main menu.");
@@ -291,7 +292,7 @@ void DisplayHighScores(int level)
 
             
             /* Update screen: */
-            SDL_UpdateRect(screen, 0, 0, 0, 0);
+            T4K_UpdateRect(screen, NULL);
 
             old_diff_level = diff_level;
         }
@@ -336,8 +337,9 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
     if (!pl_name)
         return;
 
-    /* We need to get Unicode vals from SDL keysyms */
-    SDL_EnableUNICODE(SDL_ENABLE);
+    /* SDL3 delivers typed text via SDL_EVENT_TEXT_INPUT, not keysym unicode
+       values, so text input needs to be explicitly enabled: */
+    SDL_StartTextInput(T4K_GetWindow());
 
     DEBUGMSG(debug_highscore, "Enter NameEntry()\n" );
 
@@ -374,7 +376,7 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
             loc.x = (screen->w/2) - (surf->w/2);
             loc.y = 110;
             SDL_BlitSurface(surf, NULL, screen, &loc);
-            SDL_FreeSurface(surf);
+            SDL_DestroySurface(surf);
         }
 
         surf = T4K_BlackOutline(_(s2),
@@ -384,7 +386,7 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
             loc.x = (screen->w/2) - (surf->w/2);
             loc.y = 140;
             SDL_BlitSurface(surf, NULL, screen, &loc);
-            SDL_FreeSurface(surf);
+            SDL_DestroySurface(surf);
         }
 
         surf = T4K_BlackOutline(_(s3),
@@ -394,7 +396,7 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
             loc.x = (screen->w/2) - (surf->w/2);
             loc.y = 170;
             SDL_BlitSurface(surf, NULL, screen, &loc);
-            SDL_FreeSurface(surf);
+            SDL_DestroySurface(surf);
         }
 
     }
@@ -406,23 +408,23 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
 		T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,APPEND,"%s",_(s1));
 
     /* and update: */
-    SDL_UpdateRect(screen, 0, 0, 0, 0);
+    T4K_UpdateRect(screen, NULL);
 
 
     while (!finished)
     {
         start = SDL_GetTicks();
 
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     {
                         cleanup();
                     }
 
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     /* "Stop" button - go to main menu: */
                     {
                         if (T4K_inRect(stop_rect, event.button.x, event.button.y ))
@@ -432,11 +434,11 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
                             break;
                         }
                     }
-                case SDL_KEYDOWN:
+                case SDL_EVENT_KEY_DOWN:
                     {
                         DEBUGMSG(debug_highscore, "Before keypress, string is %S\tlength = %d\n",
                                 wchar_buf, (int)wcslen(wchar_buf));
-                        switch (event.key.keysym.sym)
+                        switch (event.key.key)
                         {
                             case SDLK_ESCAPE:
                             case SDLK_RETURN:
@@ -454,69 +456,75 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
                                     break;
                                 }
 
-                                /* For any other keys, if the key has a Unicode value, */
-                                /* we add it to our string:                            */
                             default:
-                                {
-                                    if ((event.key.keysym.unicode > 0)
-                                            && (wcslen(wchar_buf) < HIGH_SCORE_NAME_LENGTH)) 
-                                    {
-                                        wchar_buf[(int)wcslen(wchar_buf)] = event.key.keysym.unicode;
-                                        redraw = 1;
-                                        T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"%C",event.key.keysym.unicode);
-                                    }
-                                }
-                        }  /* end  'switch (event.key.keysym.sym)'  */
+                                break;
+                        }  /* end  'switch (event.key.key)'  */
 
                         DEBUGMSG(debug_highscore, "After keypress, string is %S\tlength = %d\n",
                                 wchar_buf, (int)wcslen(wchar_buf));
-                        /* Now draw name, if needed: */
-                        if (redraw)
-                        {
-                            SDL_Surface* s = NULL;
-                            redraw = 0;
-
-                            /* Convert text to UTF-8 so T4K_BlackOutline() can handle it: */
-                            //         wcstombs((char*) UTF8_buf, wchar_buf, HIGH_SCORE_NAME_LENGTH * 3);
-                            T4K_ConvertToUTF8(wchar_buf, UTF8_buf, HIGH_SCORE_NAME_LENGTH * 3);
-                            /* Redraw background and shading in area where we drew text last time: */ 
-                            if (!first_draw)
-                            {
-                                SDL_BlitSurface(current_bkg(), &redraw_rect, screen, &redraw_rect);
-                                T4K_DrawButton(&redraw_rect, 0, REG_RGBA);
-                                SDL_UpdateRect(screen,
-                                        redraw_rect.x,
-                                        redraw_rect.y,
-                                        redraw_rect.w,
-                                        redraw_rect.h);
-                            }
-
-                            s = T4K_BlackOutline(UTF8_buf, NAME_FONT_SIZE, &yellow);
-                            if (s)
-                            {
-                                /* set up loc and blit: */
-                                loc.x = (screen->w/2) - (s->w/2);
-                                loc.y = 230;
-                                SDL_BlitSurface(s, NULL, screen, &loc);
-
-                                /* Remember where we drew so we can update background next time through:  */
-                                /* (for some reason we need to update a wider area to get clean image)    */
-                                redraw_rect.x = loc.x - 20;
-                                redraw_rect.y = loc.y - 10;
-                                redraw_rect.h = s->h + 20;
-                                redraw_rect.w = s->w + 40;
-                                first_draw = 0;
-
-                                SDL_UpdateRect(screen,
-                                        redraw_rect.x,
-                                        redraw_rect.y,
-                                        redraw_rect.w,
-                                        redraw_rect.h);
-                                SDL_FreeSurface(s);
-                                s = NULL;
-                            }
-                        }
+                        break;
                     }
+
+                    /* SDL3 delivers typed text (respecting keyboard layout and IME
+                       composition) here as UTF-8, instead of via key event unicode
+                       values: */
+                case SDL_EVENT_TEXT_INPUT:
+                    {
+                        wchar_t decoded[HIGH_SCORE_NAME_LENGTH + 1];
+                        int n = T4K_ConvertFromUTF8(decoded, event.text.text, HIGH_SCORE_NAME_LENGTH);
+                        int i;
+                        size_t len = wcslen(wchar_buf);
+
+                        for (i = 0; i < n && len < HIGH_SCORE_NAME_LENGTH; i++, len++)
+                            wchar_buf[len] = decoded[i];
+                        wchar_buf[len] = L'\0';
+
+                        if (n > 0)
+                        {
+                            redraw = 1;
+                            T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"%s",event.text.text);
+                        }
+                        break;
+                    }
+            }
+        }
+
+        /* Now draw name, if needed: */
+        if (redraw)
+        {
+            SDL_Surface* s = NULL;
+            redraw = 0;
+
+            /* Convert text to UTF-8 so T4K_BlackOutline() can handle it: */
+            //         wcstombs((char*) UTF8_buf, wchar_buf, HIGH_SCORE_NAME_LENGTH * 3);
+            T4K_ConvertToUTF8(wchar_buf, UTF8_buf, HIGH_SCORE_NAME_LENGTH * 3);
+            /* Redraw background and shading in area where we drew text last time: */
+            if (!first_draw)
+            {
+                SDL_BlitSurface(current_bkg(), &redraw_rect, screen, &redraw_rect);
+                T4K_DrawButton(&redraw_rect, 0, REG_RGBA);
+                T4K_UpdateRect(screen, NULL);
+            }
+
+            s = T4K_BlackOutline(UTF8_buf, NAME_FONT_SIZE, &yellow);
+            if (s)
+            {
+                /* set up loc and blit: */
+                loc.x = (screen->w/2) - (s->w/2);
+                loc.y = 230;
+                SDL_BlitSurface(s, NULL, screen, &loc);
+
+                /* Remember where we drew so we can update background next time through:  */
+                /* (for some reason we need to update a wider area to get clean image)    */
+                redraw_rect.x = loc.x - 20;
+                redraw_rect.y = loc.y - 10;
+                redraw_rect.h = s->h + 20;
+                redraw_rect.w = s->w + 40;
+                first_draw = 0;
+
+                T4K_UpdateRect(screen, NULL);
+                SDL_DestroySurface(s);
+                s = NULL;
             }
         }
 
@@ -530,8 +538,8 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
         frame++;
     }  // End of while (!finished) loop
 
-    /* Turn off SDL Unicode lookup (because has some overhead): */
-    SDL_EnableUNICODE(SDL_DISABLE);
+    /* Turn off text input (because has some overhead): */
+    SDL_StopTextInput(T4K_GetWindow());
 
     /* Now copy name into location pointed to by arg: */ 
     strncpy(pl_name, UTF8_buf, HIGH_SCORE_NAME_LENGTH * 3);

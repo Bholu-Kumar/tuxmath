@@ -34,9 +34,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "setup.h"
 #include "network.h"
 #include "menu_lan.h"
+#include "tts_toggle.h"
 
 
-/* lan_player_type now defined in network.h */
+#ifndef HAVE_LIBSDL_NET
+
+int ConnectToServer(void) { return 0; }
+int Pregame(void) { return -1; }
+void draw_player_table(void) {}
+
+#else
 
 /* Local function prototypes: ------------------- */
 void draw_player_table(void);
@@ -44,9 +51,6 @@ void draw_player_table(void);
 
 int ConnectToServer(void)
 {
-#ifndef HAVE_LIBSDL_NET
-    return 0;
-#else
     SDL_Rect loc;
     SDL_Rect stopRect;
     SDL_Event event;
@@ -80,7 +84,7 @@ int ConnectToServer(void)
             loc.x = (screen->w/2) - (s->w/2);
             loc.y = 110;
             SDL_BlitSurface(s, NULL, screen, &loc);
-            SDL_FreeSurface(s);
+            SDL_DestroySurface(s);
         }
 
         s = T4K_BlackOutline(_("Please wait"),
@@ -90,7 +94,7 @@ int ConnectToServer(void)
             loc.x = (screen->w/2) - (s->w/2);
             loc.y = 140;
             SDL_BlitSurface(s, NULL, screen, &loc);
-            SDL_FreeSurface(s);
+            SDL_DestroySurface(s);
         }
         s = NULL;
     }
@@ -98,7 +102,7 @@ int ConnectToServer(void)
     /* Draw Tux (use "reset" flavor so Tux gets drawn immediately): */
     HandleTitleScreenAnimations_Reset(true);
     /* and update: */
-    SDL_UpdateRect(screen, 0, 0, 0, 0);
+    T4K_UpdateRect(screen, NULL);
 
     while (!finished)
     {
@@ -159,16 +163,16 @@ int ConnectToServer(void)
         }
 
 
-        while (SDL_PollEvent(&event)) 
+        while (Tux_pollEvent(&event)) 
         {
             switch (event.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     {
                         cleanup();
                     }
 
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     /* "Stop" button - go to main menu: */
                     { 
                         if (T4K_inRect(stopRect, event.button.x, event.button.y ))
@@ -184,7 +188,7 @@ int ConnectToServer(void)
         /* Draw Tux: */
         HandleTitleScreenAnimations();
         /* and update: */
-        SDL_UpdateRect(screen, 0, 0, 0, 0);
+        T4K_UpdateRect(screen, NULL);
         /* Wait so we keep frame rate constant: */
         T4K_Throttle(20, &timer);
     }  // End of while (!finished) loop
@@ -209,8 +213,6 @@ int ConnectToServer(void)
     }
 
     return 1;
-
-#endif
 }
 
 
@@ -304,19 +306,19 @@ int Pregame(void)
         //Draw status of other players:
         draw_player_table();
 
-        SDL_UpdateRect(screen, 0, 0, 0, 0);
+        T4K_UpdateRect(screen, NULL);
 
         //Check SDL events:
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     {
                         cleanup();
                     }
 
-                case SDL_MOUSEBUTTONDOWN:
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     /* "Stop" button - go to main menu: */
                     {
                         if (T4K_inRect(stop_rect, event.button.x, event.button.y ))
@@ -335,9 +337,9 @@ int Pregame(void)
                         }
 
                     }
-                case SDL_KEYDOWN:
+                case SDL_EVENT_KEY_DOWN:
                     {
-                        switch (event.key.keysym.sym)
+                        switch (event.key.key)
                         {
                             case SDLK_ESCAPE:
                                 {
@@ -383,7 +385,7 @@ int Pregame(void)
                         } 
                     }
             }
-        }  // End while(SDL_PollEvent(&event))
+        }  // End while(Tux_pollEvent(&event))
 
 
         //Check network events:
@@ -416,12 +418,12 @@ int Pregame(void)
         T4K_Throttle(loop_msec, &timer);
     }  // End while(status = PREGAME_WAITING)
 
-    SDL_FreeSurface(play_surf);    //we know these can't be NULL from check above
-    SDL_FreeSurface(pause_surf);
-    SDL_FreeSurface(ready_title);
-    SDL_FreeSurface(notready_title);
-    SDL_FreeSurface(ready_subtitle);
-    SDL_FreeSurface(notready_subtitle);
+    SDL_DestroySurface(play_surf);    //we know these can't be NULL from check above
+    SDL_DestroySurface(pause_surf);
+    SDL_DestroySurface(ready_title);
+    SDL_DestroySurface(notready_title);
+    SDL_DestroySurface(ready_subtitle);
+    SDL_DestroySurface(notready_subtitle);
 
     return status;
 }
@@ -461,7 +463,7 @@ void draw_player_table(void)
         loc.x = name_x;
         loc.y = screen->h * 0.45;
         SDL_BlitSurface(surf, NULL, screen, &loc);
-        SDL_FreeSurface(surf);
+        SDL_DestroySurface(surf);
         surf = NULL;
     }
 
@@ -476,7 +478,7 @@ void draw_player_table(void)
         loc.x = name_x;
         loc.y += surf->h;
         SDL_BlitSurface(surf, NULL, screen, &loc);
-        SDL_FreeSurface(surf);
+        SDL_DestroySurface(surf);
         surf = NULL;
     }
 
@@ -498,7 +500,7 @@ void draw_player_table(void)
                 loc.x = name_x;
                 loc.y += surf->h;
                 SDL_BlitSurface(surf, NULL, screen, &loc);
-                SDL_FreeSurface(surf);
+                SDL_DestroySurface(surf);
                 surf = NULL;
             }
             if(LAN_PlayerReady(i))
@@ -516,7 +518,7 @@ void draw_player_table(void)
             {
                 loc.x = ready_x;
                 SDL_BlitSurface(surf, NULL, screen, &loc);
-                SDL_FreeSurface(surf);
+                SDL_DestroySurface(surf);
                 surf = NULL;
             }
         }
@@ -524,3 +526,5 @@ void draw_player_table(void)
             DEBUGMSG(debug_lan, "Socket %d is not connected\n", i);
     }
 }
+
+#endif /* HAVE_LIBSDL_NET */

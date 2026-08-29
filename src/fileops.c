@@ -1760,6 +1760,12 @@ int write_config_file(MC_MathGame* game, FILE* fp, int verbose)
 
     if (verbose)
     {
+        //use_tts comment
+    } 
+    fprintf(fp, "use_tts = %d\n", Opts_GetGlobalOpt(USE_TTS) );
+
+    if (verbose)
+    {
         fprintf (fp, "\n############################################################\n" 
                 "#                                                          #\n"
                 "#                Advanced Comet Speed Options              #\n"
@@ -2363,16 +2369,17 @@ static void dirname_up(char *dirname)
 /* whole path, just the name of the last subdirectory. */
 static char* get_user_name(void)
 {
-    char filepath2[PATH_MAX];
+    static char filepath2[PATH_MAX];
 
     get_user_data_dir_with_subdir(filepath2);
     return get_file_name(filepath2);
 }
 
-/* Extract the last "field" in a full pathname */
 static char* get_file_name(char *fullpath)
 {
     char *file_name;
+    if (!fullpath || !*fullpath)
+        return fullpath;
 
     file_name = &fullpath[strlen(fullpath)-1];
     /* Chop off trailing "/" */
@@ -2384,7 +2391,9 @@ static char* get_file_name(char *fullpath)
     while (file_name > &fullpath[0] && *file_name != '/')
         file_name--;
 
-    return ++file_name;
+    if (*file_name == '/')
+        return ++file_name;
+    return file_name;
 }
 
 
