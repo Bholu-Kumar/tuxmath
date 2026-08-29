@@ -34,9 +34,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "setup.h"
 #include "network.h"
 #include "menu_lan.h"
+#include "tts_toggle.h"
 
 
-/* lan_player_type now defined in network.h */
+#ifndef HAVE_LIBSDL_NET
+
+int ConnectToServer(void) { return 0; }
+int Pregame(void) { return -1; }
+void draw_player_table(void) {}
+
+#else
 
 /* Local function prototypes: ------------------- */
 void draw_player_table(void);
@@ -44,15 +51,12 @@ void draw_player_table(void);
 
 int ConnectToServer(void)
 {
-#ifndef HAVE_LIBSDL_NET
-    return 0;
-#else
     SDL_Rect loc;
     SDL_Rect stopRect;
     SDL_Event event;
 
     int finished = 0;
-    Uint64 timer = 0;
+    Uint32 timer = 0;
     int servers_found = 0;  
 
     DEBUGMSG(debug_lan, "\n Enter ConnectToServer()\n");
@@ -159,7 +163,7 @@ int ConnectToServer(void)
         }
 
 
-        while (SDL_PollEvent(&event)) 
+        while (Tux_pollEvent(&event)) 
         {
             switch (event.type)
             {
@@ -209,8 +213,6 @@ int ConnectToServer(void)
     }
 
     return 1;
-
-#endif
 }
 
 
@@ -225,7 +227,7 @@ int Pregame(void)
     int widest = 0;
     int i;
     int status = PREGAME_WAITING;
-    Uint64 timer = 0;
+    Uint32 timer = 0;
     const int loop_msec = 20;
     SDL_Event event;
     SDL_Rect title_rect, ready_rect;  //NOTE stop_rect is a global from t4k_common.h (good idea???)
@@ -307,7 +309,7 @@ int Pregame(void)
         T4K_UpdateRect(screen, NULL);
 
         //Check SDL events:
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
@@ -383,7 +385,7 @@ int Pregame(void)
                         } 
                     }
             }
-        }  // End while(SDL_PollEvent(&event))
+        }  // End while(Tux_pollEvent(&event))
 
 
         //Check network events:
@@ -524,3 +526,5 @@ void draw_player_table(void)
             DEBUGMSG(debug_lan, "Socket %d is not connected\n", i);
     }
 }
+
+#endif /* HAVE_LIBSDL_NET */

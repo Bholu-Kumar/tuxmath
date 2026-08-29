@@ -1,9 +1,11 @@
+#include <stdio.h>
 #include <SDL3/SDL.h>
 
 #include "game.h"
 #include "tuxmath.h"
 #include "options.h"
 #include "fileops.h"
+#include "tts_toggle.h"
 
 
 
@@ -37,12 +39,12 @@ int pause_game(void)
 
 #ifndef NOSOUND
     if(Opts_GetGlobalOpt(USE_SOUND))
-        T4K_AudioMusicPause();
+        T4K_AudioSetGlobalVolume(0.0f);
 #endif
 
     do
     {
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             if (event.type == SDL_EVENT_KEY_DOWN)
                 pause_done = 1;
@@ -59,7 +61,7 @@ int pause_game(void)
 
 #ifndef NOSOUND
     if(Opts_GetGlobalOpt(USE_SOUND))
-        T4K_AudioMusicResume();
+        T4K_AudioSetGlobalVolume(1.0f);
 #endif
 
     return (pause_quit);

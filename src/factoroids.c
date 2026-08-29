@@ -44,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "factoroids.h"
 #include "factoroids_graphics.h"
+#include "tts_toggle.h"
 #include "credits.h"
 #include "game.h"
 #include "fileops.h"
@@ -375,7 +376,7 @@ static int FF_init(void)
     int i;
     mouse_reset = 0;
 
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
     T4K_UpdateRect(screen, NULL);
     SDL_HideCursor();
 
@@ -829,7 +830,7 @@ static void FF_add_level(void)
         }
 
         //Empty the message queue
-        while(SDL_PollEvent(&event));
+        while(Tux_pollEvent(&event));
 
         factoroids_draw(asteroid, &tuxship, laser, bonus, bonus_time, digits, wave, score, num, tux_img, button_pressed);
         factoroids_level_message(wave);
@@ -1361,7 +1362,7 @@ void game_handle_user_events(void)
     SDL_Keycode key;
     int roto = 0; //rotation flag
 
-    while (SDL_PollEvent(&event) > 0)
+    while (Tux_pollEvent(&event) > 0)
     {
         T4K_HandleStdEvents(&event);
         if (event.type == SDL_EVENT_QUIT)
@@ -1697,7 +1698,7 @@ void wait_for_input(void)
 
     while(1)
     {
-        if(!SDL_PollEvent(&event))
+        if(!Tux_pollEvent(&event))
         {
             SDL_SetEventEnabled(SDL_EVENT_MOUSE_MOTION, false);
             SDL_SetEventEnabled(SDL_EVENT_JOYSTICK_AXIS_MOTION, false);

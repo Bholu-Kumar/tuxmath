@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "fileops.h"
 #include "setup.h"
 #include "credits.h"
+#include "tts_toggle.h"
 
 const char credit_text[MAX_LINES][MAX_LINEWIDTH] = {
     {"-"N_("TUX, OF MATH COMMAND")},  /* '-' at beginning makes highlighted: */
@@ -405,7 +406,7 @@ int credits(void)
 
     /* Clear window: */
 
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
 
 
     /* Draw title: */
@@ -463,7 +464,7 @@ int scroll_text(char text[MAX_LINES][MAX_LINEWIDTH], SDL_Rect subscreen, int spe
     do
     {
         /* Handle any incoming events: */
-        while (SDL_PollEvent(&event) > 0)
+        while (Tux_pollEvent(&event) > 0)
         {
             if (event.type == SDL_EVENT_QUIT)
             {
@@ -496,7 +497,7 @@ int scroll_text(char text[MAX_LINES][MAX_LINEWIDTH], SDL_Rect subscreen, int spe
         dest.w = subscreen.w;
         dest.h = speed;
 
-        SDL_FillSurfaceRect(screen, &dest, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+        SDL_FillSurfaceRect(screen, &dest, SDL_MapRGB(screen->format, 0, 0, 0));
 
         ++scroll;
 

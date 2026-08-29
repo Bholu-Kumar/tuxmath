@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "titlescreen.h"
 #include "fileops.h"
 #include "setup.h"
+#include "tts_toggle.h"
 #include "options.h"
 
 #include <string.h>
@@ -52,7 +53,7 @@ void DisplayHighScores(int level)
     int i = 0;
     int finished = 0;
     Uint32 frame = 0;
-    Uint64 timer = 0;
+    Uint32 timer = 0;
 
     int diff_level = level;
     int old_diff_level = -1; //So table gets refreshed first time through
@@ -76,7 +77,7 @@ void DisplayHighScores(int level)
     while (!finished)
     {
         /* Check for user events: */
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
@@ -414,7 +415,7 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
     {
         start = SDL_GetTicks();
 
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {

@@ -29,6 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "tuxmath.h"
 #include "comets.h"
 #include "multiplayer.h"
@@ -36,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "options.h"
 #include "fileops.h"
 #include "highscore.h"
+#include "tts_toggle.h"
 #include "credits.h"
 
 int params[NUM_PARAMS] = {0, 0, 0, 0};
@@ -257,7 +260,7 @@ void showWinners(int* winners, int num)
         draw_text(text, center);
         T4K_UpdateRect(screen, NULL);
 
-        while (SDL_PollEvent(&evt) )
+        while (Tux_pollEvent(&evt) )
             if (evt.type == SDL_EVENT_KEY_DOWN && evt.key.key == SDLK_ESCAPE)
                 skip = 1;
         if (skip)
@@ -268,7 +271,7 @@ void showWinners(int* winners, int num)
     SDL_FillSurfaceRect(screen, NULL, 0);
     draw_text(text, center);
     T4K_UpdateRect(screen, NULL);
-    T4K_WaitForEvent((Uint32[]){SDL_EVENT_KEY_DOWN, SDL_EVENT_MOUSE_BUTTON_DOWN}, 2);
+    T4K_WaitForEvent(SDL_EVENT_KEY_DOWN | SDL_EVENT_MOUSE_BUTTON_DOWN);
 }
 
 int initMP()

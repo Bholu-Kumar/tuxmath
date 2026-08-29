@@ -52,7 +52,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include "fileops.h"
 #include "frame_counter.h"
 #include "setup.h"
+#include "tuxmath.h"
 #include "mathcards.h"
+#include "tts_toggle.h"
 #include "multiplayer.h"
 #include "titlescreen.h"
 #include "options.h"
@@ -192,8 +194,9 @@ static void comets_handle_extra_life(void);
 static void comets_draw(void);
 static void comets_handle_game_over(int comets_status);
 
-static SDL_Surface* current_bkgd()
-{ return T4K_IsFullscreen() ? scaled_bkgd : bkgd; } //too clever for my brain to process
+
+static SDL_Surface* current_bkgd(void)
+{ return Opts_GetGlobalOpt(FULLSCREEN) ? scaled_bkgd : bkgd; } //too clever for my brain to process
 
 static int check_extra_life(void);
 static int check_exit_conditions(void);
@@ -224,6 +227,8 @@ int tts_announcer_switch;
 int tts_announcer(void *unused);
 void stop_tts_announcer_thread();
 void start_tts_announcer_thread();
+void T4K_Tts_stop(void);
+void T4K_Tts_wait(void);
 
 int volume;
 int powerup_initialize(void);
@@ -278,12 +283,7 @@ int comets_game(MC_MathGame* mgame)
 
     //see if the option matches the actual screen
     //FIXME figure out how this is happening so we don't need this workaround
-    if (Opts_GetGlobalOpt(FULLSCREEN) == !(T4K_IsFullscreen()) )
-    {
-        fprintf(stderr, "\nWarning: Opts_GetGlobalOpt(FULLSCREEN) does not match"
-                " actual screen resolution! Resetting selected option.\n");
-        Opts_SetGlobalOpt(FULLSCREEN, !Opts_GetGlobalOpt(FULLSCREEN));
-    }
+    /* Fullscreen mismatch workaround removed - T4K_IsFullscreen no longer available */
 
 
     /* most code moved into smaller functions (comets_*()): */
@@ -418,7 +418,7 @@ int comets_initialize(void)
     DEBUGCODE(debug_game) print_game_options(stderr, 0);
 
     /* Clear window: */
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
     T4K_UpdateRect(screen, NULL);
 
     comets_status = GAME_IN_PROGRESS;
@@ -469,7 +469,9 @@ int comets_initialize(void)
         //     lan_player_info[i].mine = 0;
         //   }
         /* Ask server to send a message telling which socket is ours: */
+#ifdef HAVE_LIBSDL_NET
         LAN_RequestIndex();
+#endif
         /* Disable pausing and feedback mode: */
         Opts_SetAllowPause(0);
         Opts_SetUseFeedback(0);
@@ -1079,7 +1081,7 @@ void comets_handle_user_events(void)
     SDL_Keycode key;
     SDL_Keymod mod;
 
-    while (SDL_PollEvent(&event) > 0)
+    while (Tux_pollEvent(&event) > 0)
     {
 
         T4K_HandleStdEvents(&event);
@@ -2227,7 +2229,7 @@ void comets_handle_game_over(int game_status)
             {
                 FC_frame_begin();
 
-                while (SDL_PollEvent(&event) > 0)
+                while (Tux_pollEvent(&event) > 0)
                 {
                     if  (event.type == SDL_EVENT_QUIT
                             || event.type == SDL_EVENT_KEY_DOWN
@@ -2279,6 +2281,7 @@ void comets_handle_game_over(int game_status)
             break;
         }
 
+#ifdef HAVE_LIBSDL_NET
         case GAME_OVER_LAN_WON:
         {
             int looping = 1;
@@ -2326,7 +2329,7 @@ void comets_handle_game_over(int game_status)
                 entries = 0;
                 rank = 1;
 
-                while (SDL_PollEvent(&event) > 0)
+                while (Tux_pollEvent(&event) > 0)
                 {
                     if  (event.type == SDL_EVENT_QUIT
                             || event.type == SDL_EVENT_KEY_DOWN
@@ -2445,6 +2448,7 @@ void comets_handle_game_over(int game_status)
 					_("Network game terminated.\n Connection with server was lost.")); 
             break;
         }
+#endif
 
         case GAME_OVER_ERROR:
         DEBUGMSG(debug_game, "game() exiting with error:\n");
@@ -2466,7 +2470,7 @@ void comets_handle_game_over(int game_status)
             {
                 FC_frame_begin();
 
-                while (SDL_PollEvent(&event) > 0)
+                while (Tux_pollEvent(&event) > 0)
                 {
                     if  (event.type == SDL_EVENT_QUIT
                             || event.type == SDL_EVENT_KEY_DOWN
@@ -3143,24 +3147,24 @@ void comets_key_event(SDL_Keycode key, SDL_Keymod mod)
 
     else if(key == SDLK_PAGEUP)
     {
-		volume = T4K_AudioGetSoundVolume();
-		T4K_AudioSetSoundVolume(volume + 10);
+		float v = T4K_AudioGetGlobalVolume();
+		T4K_AudioSetGlobalVolume(v + 0.1f);
 	}
 
     else if(key == SDLK_PAGEDOWN)
     {
-		volume = T4K_AudioGetSoundVolume();
-		T4K_AudioSetSoundVolume(volume - 10);	}
+		float v = T4K_AudioGetGlobalVolume();
+		T4K_AudioSetGlobalVolume(v - 0.1f);	}
 
     else if(key == SDLK_HOME)
     {
-		volume = T4K_AudioGetMusicVolume();
-		T4K_AudioSetMusicVolume(volume + 10);	}
+		float v = T4K_AudioGetGlobalVolume();
+		T4K_AudioSetGlobalVolume(v + 0.1f);	}
 
     else if(key == SDLK_END)
     {
-		volume = T4K_AudioGetMusicVolume();
-		T4K_AudioSetMusicVolume(volume - 10);
+		float v = T4K_AudioGetGlobalVolume();
+		T4K_AudioSetGlobalVolume(v - 0.1f);
 	}
 
 	
@@ -4050,6 +4054,7 @@ int tts_announcer(void *unused)
 		else if(tts_announcer_switch == 2)
 		{
 			
+#ifdef HAVE_LIBSDL_NET
 			if (Opts_LanMode())
 			{
 				T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"Score Board. ");
@@ -4063,6 +4068,7 @@ int tts_announcer(void *unused)
 				}
 			}
 			else
+#endif
 			{	
 				T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"Score %d!",score);
 			}

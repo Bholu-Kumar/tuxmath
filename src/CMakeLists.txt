@@ -16,6 +16,7 @@ endif(T4KCOMMON_FOUND)
 
 if (SDL3_net_FOUND)
   set(HAVE_LIBSDL_NET 1)
+  add_compile_definitions(HAVE_LIBSDL_NET)
   list(APPEND TUXMATH_EXTRA_SRC server.c network.c)
 endif (SDL3_net_FOUND)
 
@@ -44,6 +45,7 @@ set(SOURCES_TUXMATH
   titlescreen.c
   multiplayer.c
   campaign.c
+  tts_toggle.c
   tuxmath.c
   ${TUXMATH_EXTRA_SRC}
   )
@@ -129,6 +131,10 @@ endif (SDL3_net_FOUND)
 if (T4KCOMMON_FOUND)
   target_link_libraries(tuxmath ${T4KCOMMON_LIBRARY})
 endif ()
+
+if (RSVG_FOUND AND CAIRO_FOUND)
+  target_link_libraries(tuxmath ${RSVG_LIBRARIES} ${CAIRO_LIBRARIES})
+endif()
 
 if (APPLE)
   # The following seems to be needed to compile under 10.5

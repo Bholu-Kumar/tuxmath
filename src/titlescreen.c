@@ -31,8 +31,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tuxmath.h"
 #include "options.h"
+#include "menu_lan.h"
 #include "fileops.h"
 #include "setup.h"
+#include "tts_toggle.h"
 #include "menu.h"
 
 /* --- Data Structure for Dirty Blitting --- */
@@ -81,6 +83,7 @@ SDL_Surface* fs_bkg = NULL;
 SDL_Surface* logo = NULL;
 sprite* Tux = NULL;
 SDL_Surface* title = NULL;
+SDL_Surface* tts_hint = NULL;
 
 /* "Easter Egg" cursor */
 SDL_Surface* egg = NULL;
@@ -91,13 +94,14 @@ SDL_Rect bkg_rect,
          logo_rect,
          tux_rect,
          title_rect,
+         tts_hint_rect,
          cursor,
          beak;
 
 /* This syntax is full of fluffy kittens! (note: kittens sold separately) */
 SDL_Surface* current_bkg()
 { 
-    if (T4K_IsFullscreen())
+    if (Opts_GetGlobalOpt(FULLSCREEN))
         return fs_bkg;
     return win_bkg; 
 }
@@ -107,7 +111,7 @@ SDL_Surface* current_bkg()
 /* the "other" one.                                              */
 void set_current_bkg(SDL_Surface* new_bkg)
 {
-    if(T4K_IsFullscreen())
+    if(Opts_GetGlobalOpt(FULLSCREEN))
     {
         if(fs_bkg != NULL)
             SDL_DestroySurface(fs_bkg);
@@ -160,7 +164,7 @@ void TitleScreen(void)
     start_time = SDL_GetTicks();
 
     /* display the Standby screen */
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
 
     logo = T4K_LoadImage(standby_path, IMG_REGULAR);
     if(logo)
@@ -209,7 +213,7 @@ void TitleScreen(void)
     while ((SDL_GetTicks() - start_time) < logo_msec)
     {
         /* Check to see if user pressed escape */
-        if (SDL_PollEvent(&event)
+        if (Tux_pollEvent(&event)
                 && event.type==SDL_EVENT_KEY_DOWN
                 && event.key.key == SDLK_ESCAPE)
         {
@@ -246,7 +250,7 @@ void TitleScreen(void)
     /* --- Pull tux & logo onscreen --- */
     if(title && Tux && Tux->frame[0])
     {
-        Uint64 timer = 0;
+        Uint32 timer = 0;
         /* final tux & title positioins are already calculated,
            start outside the screen */
         tux_anim = tux_rect;
@@ -307,6 +311,8 @@ void DrawTitleScreen(void)
     SDL_BlitSurface(current_bkg(), NULL, screen, &bkg_rect);
     SDL_BlitSurface(Tux->frame[0], NULL, screen, &tux_rect);
     SDL_BlitSurface(title, NULL, screen, &title_rect);
+    if (tts_hint)
+        SDL_BlitSurface(tts_hint, NULL, screen, &tts_hint_rect);
     //T4K_UpdateRect(screen, NULL);
 }
 
@@ -388,6 +394,19 @@ int RenderTitleScreen(void)
 
         curr_res_x = screen->w;
         curr_res_y = screen->h;
+
+        if (tts_hint) {
+            SDL_DestroySurface(tts_hint);
+            tts_hint = NULL;
+        }
+        tts_hint = T4K_BlackOutline(_("Press F5 to toggle speech support"), 12, &white);
+        if (tts_hint)
+        {
+            tts_hint_rect.x = (screen->w - tts_hint->w) / 2;
+            tts_hint_rect.y = screen->h - tts_hint->h - 5;
+            tts_hint_rect.w = tts_hint->w;
+            tts_hint_rect.h = tts_hint->h;
+        }
 
         DEBUGMSG(debug_titlescreen, "Leaving RenderTitleScreen().\n");
     }
@@ -501,6 +520,12 @@ void free_titlescreen(void)
         fs_bkg = NULL;
     }
 
+    if(tts_hint)
+    {
+        SDL_DestroySurface(tts_hint);
+        tts_hint = NULL;
+    }
+
     if(win_bkg)
     {
         SDL_DestroySurface(win_bkg);
@@ -541,9 +566,9 @@ void ShowMessageWrap( int font_size, const char* str )
     int inprogress = 1;
     int page = 0; 
     int maxline;
-    Uint64 timer = 0;
+    Uint32 timer = 0;
 
-    if(T4K_IsFullscreen())
+    if(Opts_GetGlobalOpt(FULLSCREEN))
         nline = T4K_LineWrap( str, strings, 70, MAX_LINES, MAX_LINEWIDTH );
     else
         nline = T4K_LineWrap( str, strings, 35, MAX_LINES, MAX_LINEWIDTH );
@@ -639,7 +664,7 @@ void ShowMessageWrap( int font_size, const char* str )
 
         while(!finished)
         {
-            while(SDL_PollEvent(&event))
+            while(Tux_pollEvent(&event))
             {
                 switch(event.type)
                 {
@@ -728,7 +753,7 @@ void ShowMessage(int font_size, const char* str1, const char* str2,
     SDL_Surface *s1, *s2, *s3, *s4;
     SDL_Rect loc;
     int finished = 0;
-    Uint64 timer = 0;
+    Uint32 timer = 0;
 
     /* To adjust font size: */
     float scale = screen->w / 640;
@@ -790,7 +815,7 @@ void ShowMessage(int font_size, const char* str1, const char* str2,
 
     while (!finished)
     {
-        while (SDL_PollEvent(&event))
+        while (Tux_pollEvent(&event))
         {
             switch (event.type)
             {
