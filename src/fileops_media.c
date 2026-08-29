@@ -22,6 +22,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+#include <stdio.h>
 #include <string.h>
 
 #include "tuxmath.h"
@@ -351,7 +352,7 @@ int load_sound_data(void)
     {
         for (i = 0; i < NUM_SOUNDS; i++)
         {
-            sounds[i] = MIX_LoadAudio(T4K_GetMixer(), sound_filenames[i], true);
+            sounds[i] = MIX_LoadAudio(T4K_GetAudioMixer(), sound_filenames[i], true);
 
             if (sounds[i] == NULL)
             {

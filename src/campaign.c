@@ -227,7 +227,7 @@ void briefPlayer(int stage)
 	T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"%s",tts_text);
 
     //background is dark blue with a black text area
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 32));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 32));
     SDL_FillSurfaceRect(screen, &textarea, 0);
 
     //show this stage's text

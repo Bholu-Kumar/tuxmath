@@ -531,6 +531,7 @@ int run_lan_host(void)
 int stop_lan_host(void)
 {
     DEBUGMSG(debug_lan|debug_menu, "Entering stop_lan_join()\n");
+#ifdef HAVE_LIBSDL_NET
     if(!OurServerRunning())
     {
         ShowMessageWrap(DEFAULT_MENU_FONT_SIZE, _("The server is not running."));
@@ -546,6 +547,10 @@ int stop_lan_host(void)
     ShowMessageWrap(DEFAULT_MENU_FONT_SIZE, _("The server has been stopped."));
 
     return 1;
+#else
+    ShowMessageWrap(DEFAULT_MENU_FONT_SIZE, _("The server is not running."));
+    return 0;
+#endif
 }
 
 

@@ -210,7 +210,7 @@ void print_locale_info(FILE* fp)
 void initialize_options(void)
 {
     /* Initialize MathCards backend for math questions: */
-    local_game = (MC_MathGame*) malloc(sizeof(MC_MathGame));
+    local_game = (MC_MathGame*) calloc(1, sizeof(MC_MathGame));
     if (local_game == NULL)
     {
         fprintf(stderr, "\nUnable to allocate MC_MathGame\n");
@@ -224,7 +224,7 @@ void initialize_options(void)
     }
 
 
-    lan_game_settings = (MC_MathGame*) malloc(sizeof(MC_MathGame));
+    lan_game_settings = (MC_MathGame*) calloc(1, sizeof(MC_MathGame));
     if (lan_game_settings == NULL)
     {
         fprintf(stderr, "\nUnable to allocate MC_MathGame\n");
@@ -685,17 +685,20 @@ void initialize_SDL(void)
 #ifndef NOSOUND
     if (Opts_GetGlobalOpt(USE_SOUND))
     {
-        if (!T4K_AudioOpen(44100, 2))
+        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
         {
             fprintf(stderr,
-                    "\nWarning: I could not set up audio for 44100 Hz "
-                    "16-bit stereo.\n"
+                    "\nWarning: I could not initialize SDL audio.\n"
                     "The Simple DirectMedia error that occured was:\n"
                     "%s\n\n", SDL_GetError());
         }
         else
         {
-            Opts_SetSoundHWAvailable(1);
+            MIX_Init();
+            if (T4K_GetAudioMixer() != NULL)
+                Opts_SetSoundHWAvailable(1);
+            else
+                fprintf(stderr, "\nWarning: Could not create audio mixer.\n");
         }
         DEBUGMSG(debug_setup, "Sound mixer available: %d\n", Opts_SoundHWAvailable());
     }
@@ -731,39 +734,76 @@ void initialize_SDL(void)
           fs_res_y = mode->h;
         }
 
-        if (Opts_GetGlobalOpt(FULLSCREEN))
         {
-            screen = T4K_SetScreenMode(fs_res_x, fs_res_y, 1);
-            if (screen == NULL)
+            SDL_Window* win = NULL;
+            SDL_Renderer* ren = NULL;
+            Uint32 window_flags = 0;
+            int w, h;
+
+            if (Opts_GetGlobalOpt(FULLSCREEN))
+            {
+                window_flags |= SDL_WINDOW_FULLSCREEN;
+                w = fs_res_x;
+                h = fs_res_y;
+            }
+            else
+            {
+                w = Opts_WindowWidth();
+                h = Opts_WindowHeight();
+            }
+
+            win = SDL_CreateWindow("Tux, of Math Command", w, h, window_flags);
+            if (!win && (window_flags & SDL_WINDOW_FULLSCREEN))
             {
                 fprintf(stderr,
                         "\nWarning: I could not open the display in fullscreen mode.\n"
                         "The Simple DirectMedia error that occured was:\n"
                         "%s\n\n", SDL_GetError());
                 Opts_SetGlobalOpt(FULLSCREEN, 0);
+                window_flags &= ~SDL_WINDOW_FULLSCREEN;
+                w = Opts_WindowWidth();
+                h = Opts_WindowHeight();
+                win = SDL_CreateWindow("Tux, of Math Command", w, h, window_flags);
             }
+
+            if (!win)
+            {
+                fprintf(stderr,
+                        "\nError: I could not open the display.\n"
+                        "The Simple DirectMedia error that occured was:\n"
+                        "%s\n\n", SDL_GetError());
+                cleanup_on_error();
+                exit(1);
+            }
+
+            ren = SDL_CreateRenderer(win, NULL);
+            if (!ren)
+            {
+                fprintf(stderr,
+                        "\nError: I could not create the renderer.\n"
+                        "The Simple DirectMedia error that occured was:\n"
+                        "%s\n\n", SDL_GetError());
+                cleanup_on_error();
+                exit(1);
+            }
+
+            T4K_SetWindowAndRenderer(win, ren);
+
+            screen = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_ARGB8888);
+            if (screen == NULL)
+            {
+                fprintf(stderr,
+                        "\nError: I could not create the screen surface.\n"
+                        "The Simple DirectMedia error that occured was:\n"
+                        "%s\n\n", SDL_GetError());
+                cleanup_on_error();
+                exit(1);
+            }
+
+            seticon();
+
+
         }
-
-        if (!Opts_GetGlobalOpt(FULLSCREEN))
-        {
-            screen = T4K_SetScreenMode(Opts_WindowWidth(), Opts_WindowHeight(), 0);
-        }
-
-        if (screen == NULL)
-        {
-            fprintf(stderr,
-                    "\nError: I could not open the display.\n"
-                    "The Simple DirectMedia error that occured was:\n"
-                    "%s\n\n", SDL_GetError());
-            cleanup_on_error();
-            exit(1);
-        }
-
-        seticon();
-
-        SDL_SetWindowTitle(T4K_GetWindow(), "Tux, of Math Command");
-
-
     }
 }
 

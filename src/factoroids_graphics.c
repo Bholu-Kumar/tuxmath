@@ -1,11 +1,15 @@
 #include "factoroids_graphics.h"
 
+#include <stdio.h>
 #include "tuxmath.h"
 #include "fileops.h"
 #include "factoroids.h"
 #include "frame_counter.h"
 #include "draw_utils.h"
 #include "SDL_rotozoom.h"
+
+#include "options.h"
+
 
 /* definitions for cockpit buttons */
 #define BUTTONW 24
@@ -101,7 +105,7 @@ extern int FF_game;
 
 SDL_Surface* current_bkgd(void)
 {
-    return T4K_IsFullscreen() ? scaled_bkgd : bkgd;
+    return Opts_GetGlobalOpt(FULLSCREEN) ? scaled_bkgd : bkgd;
 }
 
 
@@ -281,7 +285,7 @@ void factoroids_draw(asteroid_type *asteroid, tuxship_type *tuxship, FF_laser_ty
     SDL_Surface* surf;
     SDL_Rect dest;
 
-    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 0, 0));
+    SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
 
     /************ Draw Background ***************/
 

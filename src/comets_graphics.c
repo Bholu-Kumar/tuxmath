@@ -1,5 +1,6 @@
 #include "comets_graphics.h"
 
+#include <stdio.h>
 #include "draw_utils.h"
 #include "fileops.h"
 #include "frame_counter.h"
@@ -17,12 +18,12 @@ void comets_draw_background(SDL_Surface *bkgd, int wave)
     SDL_Rect dest;
 
     if (fgcolor == 0)
-        fgcolor = SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 64, 96, 64);
+        fgcolor = SDL_MapRGB(screen->format, 64, 96, 64);
     if (old_wave != wave)
     {
         DEBUGMSG(debug_game,"Wave %d\n", wave);
         old_wave = wave;
-        bgcolor = SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL,
+        bgcolor = SDL_MapRGB(screen->format,
                 64,
                 64 + ((wave * 32) % 192),
                 128 - ((wave * 16) % 128) );
@@ -318,7 +319,7 @@ void comets_draw_misc(MC_MathGame *curr_game, int wave,
         dest.h = images[IMG_EXTRA_LIFE]->h/2;
         dest.w = ((Opts_BonusCometInterval() + 1 - bonus_comet_counter)
                 * images[IMG_EXTRA_LIFE]->w) / Opts_BonusCometInterval();
-        SDL_FillSurfaceRect(screen, &dest, SDL_MapRGB(SDL_GetPixelFormatDetails(screen->format), NULL, 0, 255, 0));
+        SDL_FillSurfaceRect(screen, &dest, SDL_MapRGB(screen->format, 0, 255, 0));
     }
 
     /* Draw wave: */
@@ -349,11 +350,13 @@ void comets_draw_misc(MC_MathGame *curr_game, int wave,
         SDL_BlitSurface(images[IMG_SCORE], NULL, screen, &dest);
 
         /* In LAN mode, we show the server-generated score: */
+#ifdef HAVE_LIBSDL_NET
         if(Opts_LanMode())
         {
             sprintf(str, "%.6d", LAN_PlayerScore(LAN_MyIndex()));
         }
         else
+#endif
             sprintf(str, "%.6d", score);
 
         /* Draw score numbers: */
@@ -388,6 +391,7 @@ void comets_draw_misc(MC_MathGame *curr_game, int wave,
         }
     }
 
+#ifdef HAVE_LIBSDL_NET
     /* Draw other players' scores (LAN game) */
     if (Opts_LanMode())
     {
@@ -421,6 +425,7 @@ void comets_draw_misc(MC_MathGame *curr_game, int wave,
             }
         }
     }
+#endif
 
     /* Draw stop button: */
     if (!help_controls->x_is_blinking || (FC_sprite_counter % 10 < 5)) {
