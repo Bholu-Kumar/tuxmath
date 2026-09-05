@@ -9,4 +9,7 @@ int Tux_pollEvent(SDL_Event *event);
 /* Toggle TTS on/off, persist to config, and give audio feedback */
 void ToggleTTS(void);
 
+/* Toggle Braille output (stub) */
+void ToggleBraille(void);
+
 #endif

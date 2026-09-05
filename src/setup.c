@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "titlescreen.h"
 #include "highscore.h"
 #include "mysetenv.h"
+#include "tts_toggle.h"
 
 
 /* SDL includes: -----------------*/
@@ -136,12 +137,24 @@ void setup(int argc, char * argv[])
     /* initialize settings and read in config files: */
     /* Note this now only does the global settings   */
     initialize_options();
+
+    /* Init espeak-ng FIRST so it opens its audio path before SDL3_mixer. */
+    T4K_Tts_init();
+
     /* Command-line code now in own function: */
     handle_command_args(argc, argv);
+
     /* initialize default user's options (for resolution)*/
     initialize_options_user();
     /* SDL setup in own function:*/
     initialize_SDL();
+
+    /* TTS initialized before SDL; now sync volume, voice, status, and register toggle callback */
+    T4K_Tts_set_volume(100);
+    T4K_Tts_set_voice("en");
+    T4K_Tts_set_status(Opts_GetGlobalOpt(USE_TTS));
+    T4K_OnAccessibilityToggle(ToggleTTS, ToggleBraille);
+
     /* Read image and sound files: */
     load_data_files();
     /* Generate flipped versions of walking images */
@@ -630,8 +643,6 @@ void handle_command_args(int argc, char* argv[])
         {
 			++i;
 			my_setenv("LANGUAGE",argv[i]);
-			/* initialize Tts */
-			T4K_Tts_init();
 			T4K_Tts_set_voice(argv[i]);
         }
 
