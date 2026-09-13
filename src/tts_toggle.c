@@ -10,7 +10,6 @@
 extern void stop_tts_announcer_thread(void);
 extern void start_tts_announcer_thread(void);
 
-static int braille_enabled = 0;
 
 void ToggleTTS(void)
 {
@@ -49,33 +48,6 @@ void ToggleTTS(void)
     write_user_config_file(local_game);
 }
 
-void ToggleBraille(void)
-{
-#if defined(_WIN32) || defined(WIN32)
-    static Uint32 last_toggle_time = 0;
-    Uint32 current_time = SDL_GetTicks();
-    if (current_time - last_toggle_time < 200)
-        return;
-    last_toggle_time = current_time;
-#endif
-
-    if (braille_enabled)
-    {
-        int prev_status = Opts_GetGlobalOpt(USE_TTS);
-        T4K_Tts_set_status(1);
-        T4K_Tts_say(DEFAULT_VALUE, DEFAULT_VALUE, INTERRUPT, _("Braille output disabled"));
-        T4K_Tts_set_status(prev_status);
-        braille_enabled = 0;
-    }
-    else
-    {
-        int prev_status = Opts_GetGlobalOpt(USE_TTS);
-        T4K_Tts_set_status(1);
-        T4K_Tts_say(DEFAULT_VALUE, DEFAULT_VALUE, INTERRUPT, _("Braille output enabled"));
-        T4K_Tts_set_status(prev_status);
-        braille_enabled = 1;
-    }
-}
 
 int Tux_pollEvent(SDL_Event *event)
 {
@@ -85,8 +57,6 @@ int Tux_pollEvent(SDL_Event *event)
     {
         if (event->key.key == SDLK_F5)
             ToggleTTS();
-        else if (event->key.key == SDLK_F9)
-            ToggleBraille();
     }
     return ret;
 }

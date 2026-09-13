@@ -435,6 +435,9 @@ int HandleTitleScreenEvents(SDL_Event* evt)
    */
 void HandleTitleScreenResSwitch(int new_w, int new_h)
 {
+    /* After a resize, t4kcommon may have reallocated the screen surface.
+       Refresh our local pointer so RenderTitleScreen() uses the new one. */
+    screen = T4K_GetScreen();
     RenderTitleScreen();
 }
 

@@ -110,6 +110,7 @@ if(HAVE_LIBT4K_COMMON)
     target_compile_definitions(${EXE_NAME} PRIVATE HAVE_LIBT4K_COMMON=1)
 endif()
 
+
 if(ENABLE_NLS)
     target_compile_definitions(${EXE_NAME} PRIVATE ENABLE_NLS=1)
 endif()
@@ -191,14 +192,6 @@ target_link_libraries(${EXE_NAME}
     ${T4K_COMMON_LIBRARIES}
 )
 
-# RSVG + Cairo (both Linux and Windows when available)
-if(RSVG_FOUND AND CAIRO_FOUND)
-    target_link_libraries(${EXE_NAME}
-        ${RSVG_LIBRARIES}
-        ${CAIRO_LIBRARIES}
-    )
-endif()
-
 # SDL3_net (optional, for LAN multiplayer)
 if(SDL3_NET_FOUND)
     target_link_libraries(${EXE_NAME} PkgConfig::SDL3_NET)
@@ -237,9 +230,7 @@ endif()
 # -------------------------------------------------------------------
 # Install (Linux/Mac only — Windows uses the build directory directly)
 # -------------------------------------------------------------------
-if(UNIX AND NOT APPLE)
-    install(TARGETS ${EXE_NAME} DESTINATION bin)
-endif()
+install(TARGETS ${EXE_NAME} DESTINATION bin)
 
 # -------------------------------------------------------------------
 # Copy data folder on Windows so the game can run from build dir
@@ -251,6 +242,22 @@ if(WIN32)
             "$<TARGET_FILE_DIR:${EXE_NAME}>/data"
         COMMENT "Copying data/ folder next to TuxMath.exe..."
     )
+    # Deploy the updated libt4k_common.dll next to the executable
+    # so users don't need to manually copy it after rebuilding t4kcommon.
+    if(T4K_COMMON_LIBRARY_DIRS AND T4K_COMMON_LIBRARIES)
+        find_file(_t4k_dll
+            NAMES libt4k_common.dll t4k_common.dll
+            HINTS "${T4K_COMMON_LIBRARY_DIRS}"
+        )
+        if(_t4k_dll)
+            add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_t4k_dll}"
+                    "$<TARGET_FILE_DIR:${EXE_NAME}>/libt4k_common.dll"
+                COMMENT "Deploying libt4k_common.dll next to TuxMath.exe..."
+            )
+        endif()
+    endif()
 endif()
 
 # -------------------------------------------------------------------

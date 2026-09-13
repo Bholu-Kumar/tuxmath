@@ -153,7 +153,8 @@ void setup(int argc, char * argv[])
     T4K_Tts_set_volume(100);
     T4K_Tts_set_voice("en");
     T4K_Tts_set_status(Opts_GetGlobalOpt(USE_TTS));
-    T4K_OnAccessibilityToggle(ToggleTTS, ToggleBraille);
+    /* NULL for braille: TuxMath does not support Braille output */
+    T4K_OnAccessibilityToggle(ToggleTTS, NULL);
 
     /* Read image and sound files: */
     load_data_files();
@@ -812,6 +813,13 @@ void initialize_SDL(void)
             }
 
             T4K_SetScreen(screen);
+
+#ifdef HAVE_T4K_SETRESOLUTIONS
+            /* Sync window/fullscreen resolution info with updated t4kcommon.
+               Without this, t4kcommon defaults to 640x480 and get_scale()
+               may produce incorrect font-size scaling. */
+            T4K_SetResolutions(w, h, fs_res_x, fs_res_y);
+#endif
 
             seticon();
 

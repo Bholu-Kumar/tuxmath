@@ -71,7 +71,9 @@ message(STATUS "ENABLE_NLS: ${ENABLE_NLS}")
 set(HAVE_GETTEXT ENABLE_NLS)
 
 # -------------------------------------------------------------------
-# Locate libt4k_common (pkg-config preferred, sibling-repo fallback)
+# Locate libt4k_common
+# Strategy mirrors TuxType: pkg-config first (Linux/installed),
+# then sibling-repo fallback (typical development layout).
 # -------------------------------------------------------------------
 pkg_check_modules(T4K_COMMON t4k_common)
 if(NOT T4K_COMMON_FOUND)

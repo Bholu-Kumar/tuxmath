@@ -20,6 +20,9 @@
 /* Define to 1 if libt4k_common is available */
 #cmakedefine HAVE_LIBT4K_COMMON 1
 
+/* Define to 1 if T4K_SetResolutions() is available (updated t4kcommon) */
+#cmakedefine HAVE_T4K_SETRESOLUTIONS 1
+
 /* Define to 1 if libRSVG is available (SVG image loading) */
 #cmakedefine HAVE_RSVG 1
 

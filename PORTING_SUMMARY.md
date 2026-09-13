@@ -101,3 +101,39 @@ These two changes restore full functionality for:
 - ✅ Play Custom Game
 - ✅ Campaign / Math Command Fleet
 - ✅ Global options file loading
+
+---
+
+## 6. Updated t4kcommon Integration (Phase 2)
+
+This phase integrates the cross-platform (Windows + Ubuntu + macOS) updated `t4kcommon` into TuxMath while preserving the existing Ubuntu Autotools build.
+
+### Key Changes
+
+#### Build System
+| File | Change |
+|------|--------|
+| `CMakeLists.txt` | Rewrote t4k_common discovery: pkg-config first (Linux), then `find_path`/`find_library` with toolchain-prefix hints (MSYS2 UCRT64). Added `check_symbol_exists(T4K_SetResolutions)` to detect updated API. |
+| `config.h.cmake` | Added `#cmakedefine HAVE_T4K_SETRESOLUTIONS 1` |
+| `src/CMakeLists.txt` | Propagates `HAVE_T4K_SETRESOLUTIONS` define. Auto-deploys `libt4k_common.dll` next to `TuxMath.exe` via post-build step. |
+| `configure.ac` | Added `AC_CHECK_FUNCS([T4K_SetResolutions])` so Ubuntu Autotools builds also detect the new API. |
+| `src/Makefile.am` | Added `tts_toggle.c` to `tuxmath_SOURCES`; `tts_toggle.h` to `EXTRA_DIST`. |
+
+#### Source Code
+| File | Change |
+|------|--------|
+| `src/setup.c` | Calls `T4K_SetResolutions(w, h, fs_w, fs_h)` after `T4K_SetScreen()` — guarded with `#ifdef HAVE_T4K_SETRESOLUTIONS` so Ubuntu still compiles against older t4kcommon. |
+| `src/titlescreen.c` | `HandleTitleScreenResSwitch()` refreshes local `screen` pointer from `T4K_GetScreen()` before re-rendering, preventing stale-pointer crashes on resize. |
+
+#### Braille Removed from TuxMath
+Per project requirements, Braille input/output is not supported in TuxMath:
+- **`src/tts_toggle.c`**: Removed `ToggleBraille()` and `braille_enabled` state variable. Removed F9 key binding.
+- **`src/tts_toggle.h`**: Removed `ToggleBraille` declaration.
+- **`src/setup.c`**: Changed `T4K_OnAccessibilityToggle(ToggleTTS, ToggleBraille)` → `T4K_OnAccessibilityToggle(ToggleTTS, NULL)`.
+
+> **Scope**: These changes affect TuxMath only. `t4kcommon` and the Ubuntu build are unmodified.
+
+### Verification
+- ✅ `HAVE_T4K_SETRESOLUTIONS 1` confirmed in `build-win/config.h`
+- ✅ `TuxMath.exe` (1.24 MB) and `libt4k_common.dll` auto-deployed to `build-win/src/`
+- ✅ Process alive 3 s after launch — no startup crash
