@@ -36,9 +36,12 @@ tuxmath_preview.spec
 
 # Ignore any untracked files under build/ or buildw32/
 build/
-buildw32/
-# ...except scripts:
+buildw32/*
 !buildw32/*.sh
+!buildw32/*.bat
+
+# Ignore Windows build output directory (compiled binaries, DLLs, cache)
+build-win/
 
 # Ignore backup files:
 *~

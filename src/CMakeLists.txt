@@ -1,170 +1,310 @@
-#The following isn't necessary because of the SDL workaround
-#cmake_minimum_required(VERSION 2.4.7 FATAL_ERROR)
+#
+# src/CMakeLists.txt for TuxMath (SDL3 Edition)
+#
+# Compiles all TuxMath source files into the tuxmath (Linux) or TuxMath (Windows)
+# executable. Windows/MinGW-specific blocks are guarded by if(MINGW) / if(WIN32)
+# so the Debian/Linux Autotools build is completely unaffected.
+#
+# Strategy mirrors TuxType's src/CMakeLists.txt exactly.
+#
 
-## Libraries
-find_package(SDL3 REQUIRED CONFIG)
-find_package(SDL3_image REQUIRED CONFIG)
-find_package(SDL3_mixer REQUIRED CONFIG)
-find_package(SDL3_net CONFIG)
+cmake_minimum_required(VERSION 3.10)
 
-# SDL_gfx has no SDL3 port, so the vendored SDL_rotozoom.c is always used now.
-set(TUXMATH_EXTRA_SRC ${TUXMATH_EXTRA_SRC} SDL_rotozoom.c)
+# -------------------------------------------------------------------
+# Generate config.h into the build root so that #include "config.h"
+# resolves correctly from any source file (globals.h, tuxmathadmin.c, etc.)
+# -------------------------------------------------------------------
+if(MINGW)
+    set(BUILD_MINGW32 1)
+    set(HAVE_PUTENV  1)
+else()
+    set(BUILD_MINGW32 0)
+    set(HAVE_PUTENV  0)
+endif()
 
-if (T4KCOMMON_FOUND)
-  set(HAVE_LIBT4K_COMMON 1)
-endif(T4KCOMMON_FOUND)
+if(SDL3_NET_FOUND)
+    set(HAVE_LIBSDL_NET 1)
+else()
+    set(HAVE_LIBSDL_NET 0)
+endif()
 
-if (SDL3_net_FOUND)
-  set(HAVE_LIBSDL_NET 1)
-  add_compile_definitions(HAVE_LIBSDL_NET)
-  list(APPEND TUXMATH_EXTRA_SRC server.c network.c)
-endif (SDL3_net_FOUND)
+if(HAVE_RSVG)
+    set(HAVE_RSVG 1)
+else()
+    set(HAVE_RSVG 0)
+endif()
 
-## Define the source files used for each executable
-# tuxmath
+if(HAVE_LIBT4K_COMMON)
+    set(HAVE_LIBT4K_COMMON 1)
+else()
+    set(HAVE_LIBT4K_COMMON 0)
+endif()
+
+configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake
+               ${CMAKE_BINARY_DIR}/config.h)
+
+# -------------------------------------------------------------------
+# Core source files (from src/Makefile.am tuxmath_SOURCES)
+# -------------------------------------------------------------------
 set(SOURCES_TUXMATH
-  audio.c
-  comets.c
-  comets_graphics.c
-  credits.c
-  draw_utils.c
-  factoroids.c
-  factoroids_graphics.c
-  fileops.c
-  fileops_media.c
-  frame_counter.c
-  game.c
-  menu.c
-  menu_lan.c
-  highscore.c
-  lessons.c
-  mathcards.c
-  mysetenv.c
-  options.c
-  setup.c
-  titlescreen.c
-  multiplayer.c
-  campaign.c
-  tts_toggle.c
-  tuxmath.c
-  ${TUXMATH_EXTRA_SRC}
-  )
+    audio.c
+    campaign.c
+    comets.c
+    comets_graphics.c
+    credits.c
+    draw_utils.c
+    factoroids.c
+    factoroids_graphics.c
+    fileops.c
+    fileops_media.c
+    frame_counter.c
+    game.c
+    highscore.c
+    lessons.c
+    mathcards.c
+    menu.c
+    menu_lan.c
+    multiplayer.c
+    mysetenv.c
+    options.c
+    setup.c
+    titlescreen.c
+    tts_toggle.c
+    tuxmath.c
+    SDL_rotozoom.c
+)
 
-message("${SOURCES_TUXMATH}")
-
-# tuxmathadmin
-set(SOURCES_TUXMATHADMIN
-  tuxmathadmin.c
-  )
-
-## Include files
-if (NOT BUILD_INTL)
-  # Generate the config.h file
-  configure_file(${TuxMath_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-endif (NOT BUILD_INTL)
-check_include_file(${CMAKE_CURRENT_BINARY_DIR}/config.h HAVE_CONFIG_H)
-
-include_directories(
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${T4KCOMMON_INCLUDE_DIR}
-  ${TUXMATH_EXTRA_INCLUDES}
-  ${INTL_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/src
-  )
-
-if (TUXMATH_BUILD_INTL)
-  link_directories(${INTL_BINARY_DIR})
-endif(TUXMATH_BUILD_INTL)
-
-
-## Define the executables
-add_executable (
-  tuxmath
-  MACOSX_BUNDLE
-  WIN32
-  ${SOURCES_TUXMATH}
-  )
-
-add_executable (
-  tuxmathadmin
-  ${SOURCES_TUXMATHADMIN}
-  )
-
-# getting rid of semicolons
-set(_rsvg_cflags "")
-foreach(f ${RSVG_CFLAGS})
-  set(_rsvg_cflags "${_rsvg_cflags} ${f}")
-endforeach(f)
-
-set(_cairo_cflags "")
-foreach(f ${CAIRO_CFLAGS})
-  set(_cairo_cflags "${_cairo_cflags} ${f}")
-endforeach(f)
-
-set(_rsvg_ldflags "")
-foreach(f ${RSVG_LDFLAGS})
-  set(_rsvg_ldflags "${_rsvg_ldflags} ${f}")
-endforeach(f)
-
-set(_cairo_ldflags "")
-foreach(f ${CAIRO_LDFLAGS})
-  set(_cairo_ldflags "${_cairo_ldflags} ${f}")
-endforeach(f)
-
-set_target_properties (
-  tuxmath
-  PROPERTIES COMPILE_FLAGS
-  "-DDATA_PREFIX=\\\"${TUXMATH_DATA_PREFIX}\\\" -DVERSION=\\\"${TUXMATH_VERSION}\\\" -DLOCALEDIR=\\\"${LOCALE_DIR}\\\" -DPACKAGE=\\\"tuxmath\\\" ${_rsvg_cflags} ${_cairo_cflags}"
-  LINK_FLAGS "${_rsvg_ldflags} ${_cairo_ldflags}"
-  )
-
-target_link_libraries (tuxmath
-  SDL3::SDL3
-  SDL3_image::SDL3_image
-  SDL3_mixer::SDL3_mixer
-  )
-
-if (SDL3_net_FOUND)
-   target_link_libraries (tuxmath SDL3_net::SDL3_net)
-endif (SDL3_net_FOUND)
-
-if (T4KCOMMON_FOUND)
-  target_link_libraries(tuxmath ${T4KCOMMON_LIBRARY})
-endif ()
-
-if (RSVG_FOUND AND CAIRO_FOUND)
-  target_link_libraries(tuxmath ${RSVG_LIBRARIES} ${CAIRO_LIBRARIES})
+# Network support — include when SDL3_net is available
+if(SDL3_NET_FOUND)
+    list(APPEND SOURCES_TUXMATH network.c server.c)
+    message(STATUS "SDL3_net found — including network.c and server.c")
 endif()
 
-if (APPLE)
-  # The following seems to be needed to compile under 10.5
-  set_target_properties(tuxmath tuxmathadmin
-    PROPERTIES
-    LINK_FLAGS "-mmacosx-version-min=10.4")
-endif(APPLE)
-
-if (ICONV_FOUND)
-  set(ICONV_TEMP ${ICONV_LIBRARIES})
-  message("Linking iconv: ${ICONV_TEMP}")
+# -------------------------------------------------------------------
+# Executable name: TuxMath on Windows, tuxmath on Linux/Mac
+# -------------------------------------------------------------------
+if(WIN32)
+    set(EXE_NAME "TuxMath")
+else()
+    set(EXE_NAME "tuxmath")
 endif()
-if (TUXMATH_BUILD_INTL)
-  target_link_libraries(tuxmath ${ICONV_TEMP} libintl.a)
-endif(TUXMATH_BUILD_INTL)
 
-#Some versions of binutils may have problems linking libm without an explicit declaration
-if(UNIX AND NOT APPLE)
-  target_link_libraries(tuxmath m)
-endif(UNIX AND NOT APPLE)
+add_executable(${EXE_NAME} ${SOURCES_TUXMATH})
+
+# -------------------------------------------------------------------
+# Compile definitions (mirrors Makefile.am AM_CFLAGS / AM_CPPFLAGS)
+# -------------------------------------------------------------------
+target_compile_definitions(${EXE_NAME} PRIVATE
+    DATA_PREFIX="${TUXMATH_DATA_PREFIX}"
+    LOCALEDIR="${LOCALE_DIR}"
+    VERSION="${TUXMATH_VERSION}"
+    PACKAGE="tuxmath"
+    DEBUG
+)
+
+if(HAVE_RSVG)
+    target_compile_definitions(${EXE_NAME} PRIVATE HAVE_RSVG=1)
+endif()
+
+if(HAVE_LIBT4K_COMMON)
+    target_compile_definitions(${EXE_NAME} PRIVATE HAVE_LIBT4K_COMMON=1)
+endif()
 
 
-set_target_properties (
-  tuxmathadmin
-  PROPERTIES COMPILE_FLAGS 
-  "-DDATA_PREFIX=\\\"${TUXMATH_DATA_PREFIX}\\\" -DVERSION=\\\"${TUXMATHADMIN_VERSION}\\\" -DLOCALEDIR=\\\"${LOCALE_DIR}\\\" -DPACKAGE=\\\"tuxmathadmin\\\""
-  )
+if(ENABLE_NLS)
+    target_compile_definitions(${EXE_NAME} PRIVATE ENABLE_NLS=1)
+endif()
 
-## Installation specifications
-if (UNIX AND NOT APPLE)
-  install (TARGETS tuxmath tuxmathadmin
-    RUNTIME DESTINATION bin)
-endif(UNIX AND NOT APPLE)
+if(MINGW)
+    target_compile_definitions(${EXE_NAME} PRIVATE
+        BUILD_MINGW32=1
+        HAVE_PUTENV=1
+    )
+endif()
+
+if(SDL3_NET_FOUND)
+    target_compile_definitions(${EXE_NAME} PRIVATE HAVE_LIBSDL_NET=1)
+endif()
+
+# -------------------------------------------------------------------
+# Include directories
+# -------------------------------------------------------------------
+target_include_directories(${EXE_NAME} PRIVATE
+    ${CMAKE_BINARY_DIR}           # for generated config.h
+    ${CMAKE_CURRENT_SOURCE_DIR}   # for local headers
+    ${SDL3_INCLUDE_DIRS}
+    ${SDL3_IMAGE_INCLUDE_DIRS}
+    ${SDL3_TTF_INCLUDE_DIRS}
+    ${SDL3_MIXER_INCLUDE_DIRS}
+    ${T4K_COMMON_INCLUDE_DIRS}
+)
+
+if(TUXMATH_BUILD_INTL)
+    target_include_directories(${EXE_NAME} PRIVATE ${INTL_BINARY_DIR})
+endif()
+
+# -------------------------------------------------------------------
+# On MinGW: auto-detect librsvg, cairo, glib-2.0, libintl, libiconv,
+# libpng, zlib using pkg-config + compiler-derived MSYS2 prefix.
+# No paths are hardcoded — works on any MSYS2 installation.
+# -------------------------------------------------------------------
+if(MINGW)
+    pkg_check_modules(LIBRSVG REQUIRED librsvg-2.0)
+    pkg_check_modules(CAIRO   REQUIRED cairo)
+    pkg_check_modules(GLIB    REQUIRED glib-2.0)
+
+    # Derive MSYS2 prefix from compiler location
+    if(DEFINED ENV{MSYS2_PREFIX})
+        set(_msys2_prefix "$ENV{MSYS2_PREFIX}")
+    else()
+        get_filename_component(_msys2_prefix "${CMAKE_C_COMPILER}" DIRECTORY)
+        get_filename_component(_msys2_prefix "${_msys2_prefix}" DIRECTORY)
+    endif()
+
+    find_library(LIBINTL_LIBRARIES  NAMES intl libintl
+        HINTS "${_msys2_prefix}/lib" REQUIRED)
+    find_library(LIBICONV_LIBRARIES NAMES iconv libiconv
+        HINTS "${_msys2_prefix}/lib" REQUIRED)
+    find_library(LIBPNG_LIBRARIES   NAMES png libpng png16 libpng16
+        HINTS "${_msys2_prefix}/lib" REQUIRED)
+    find_library(ZLIB_LIBRARIES     NAMES z zlib
+        HINTS "${_msys2_prefix}/lib" REQUIRED)
+
+    target_include_directories(${EXE_NAME} PRIVATE
+        ${LIBRSVG_INCLUDE_DIRS}
+        ${CAIRO_INCLUDE_DIRS}
+        ${GLIB_INCLUDE_DIRS}
+    )
+
+    link_directories(${LIBRSVG_LIBRARY_DIRS})
+endif()
+
+# -------------------------------------------------------------------
+# Link libraries — common to all platforms
+# -------------------------------------------------------------------
+target_link_directories(${EXE_NAME} PRIVATE ${T4K_COMMON_LIBRARY_DIRS})
+
+target_link_libraries(${EXE_NAME}
+    PkgConfig::SDL3
+    PkgConfig::SDL3_IMAGE
+    PkgConfig::SDL3_TTF
+    PkgConfig::SDL3_MIXER
+    ${T4K_COMMON_LIBRARIES}
+)
+
+# SDL3_net (optional, for LAN multiplayer)
+if(SDL3_NET_FOUND)
+    target_link_libraries(${EXE_NAME} PkgConfig::SDL3_NET)
+    target_include_directories(${EXE_NAME} PRIVATE ${SDL3_NET_INCLUDE_DIRS})
+endif()
+
+# -------------------------------------------------------------------
+# On MinGW: also link gettext, iconv, png, zlib, Windows system libs
+# shlwapi is needed because compiler.h uses shlwapi.h for StrStrI
+# (strcasestr replacement on Windows)
+# -------------------------------------------------------------------
+if(MINGW)
+    target_link_libraries(${EXE_NAME}
+        ${LIBRSVG_LIBRARIES}
+        ${LIBINTL_LIBRARIES}
+        ${LIBICONV_LIBRARIES}
+        ${LIBPNG_LIBRARIES}
+        ${ZLIB_LIBRARIES}
+        # Required Windows system libraries
+        uuid ole32 wsock32 shlwapi
+    )
+    # Uncomment to suppress the console window in the final .exe:
+    # set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS "-mwindows")
+endif()
+
+# On Linux/Mac, link math library
+if(UNIX)
+    target_link_libraries(${EXE_NAME} m)
+endif()
+
+# intl for Apple / build-bundled-intl path
+if(TUXMATH_BUILD_INTL)
+    target_link_libraries(${EXE_NAME} libintl.a)
+endif()
+
+# -------------------------------------------------------------------
+# Install (Linux/Mac only — Windows uses the build directory directly)
+# -------------------------------------------------------------------
+install(TARGETS ${EXE_NAME} DESTINATION bin)
+
+# -------------------------------------------------------------------
+# Copy data folder on Windows so the game can run from build dir
+# -------------------------------------------------------------------
+if(WIN32)
+    add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/data"
+            "$<TARGET_FILE_DIR:${EXE_NAME}>/data"
+        COMMENT "Copying data/ folder next to TuxMath.exe..."
+    )
+    # Deploy the updated libt4k_common.dll next to the executable
+    # so users don't need to manually copy it after rebuilding t4kcommon.
+    if(T4K_COMMON_LIBRARY_DIRS AND T4K_COMMON_LIBRARIES)
+        find_file(_t4k_dll
+            NAMES libt4k_common.dll t4k_common.dll
+            HINTS "${T4K_COMMON_LIBRARY_DIRS}"
+        )
+        if(_t4k_dll)
+            add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_t4k_dll}"
+                    "$<TARGET_FILE_DIR:${EXE_NAME}>/libt4k_common.dll"
+                COMMENT "Deploying libt4k_common.dll next to TuxMath.exe..."
+            )
+        endif()
+    endif()
+endif()
+
+# -------------------------------------------------------------------
+# Unix-only auxiliary executables (not built on Windows)
+# Matches Makefile.am: if BUILD_MINGW32 → only TuxMath + tuxmathserver
+# -------------------------------------------------------------------
+if(NOT WIN32)
+    # tuxmathadmin
+    add_executable(tuxmathadmin tuxmathadmin.c)
+    target_include_directories(tuxmathadmin PRIVATE
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${T4K_COMMON_INCLUDE_DIRS}
+    )
+    target_compile_definitions(tuxmathadmin PRIVATE
+        DATA_PREFIX="${TUXMATH_DATA_PREFIX}"
+        VERSION="${TUXMATHADMIN_VERSION}"
+        LOCALEDIR="${LOCALE_DIR}"
+        PACKAGE="tuxmathadmin"
+    )
+    target_link_directories(tuxmathadmin PRIVATE ${T4K_COMMON_LIBRARY_DIRS})
+    target_link_libraries(tuxmathadmin m)
+    install(TARGETS tuxmathadmin RUNTIME DESTINATION bin)
+
+    # generate_lesson
+    add_executable(generate_lesson
+        generate_lesson.c
+        mathcards.c
+        options.c
+        fileops.c
+        lessons.c
+    )
+    target_include_directories(generate_lesson PRIVATE
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${T4K_COMMON_INCLUDE_DIRS}
+    )
+    target_compile_definitions(generate_lesson PRIVATE
+        DATA_PREFIX="${TUXMATH_DATA_PREFIX}"
+        VERSION="${TUXMATH_VERSION}"
+        LOCALEDIR="${LOCALE_DIR}"
+        PACKAGE="tuxmath"
+    )
+    target_link_directories(generate_lesson PRIVATE ${T4K_COMMON_LIBRARY_DIRS})
+    target_link_libraries(generate_lesson
+        PkgConfig::SDL3
+        ${T4K_COMMON_LIBRARIES}
+        m
+    )
+endif()

@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "titlescreen.h"
 #include "highscore.h"
 #include "mysetenv.h"
+#include "tts_toggle.h"
 
 
 /* SDL includes: -----------------*/
@@ -136,12 +137,25 @@ void setup(int argc, char * argv[])
     /* initialize settings and read in config files: */
     /* Note this now only does the global settings   */
     initialize_options();
+
+    /* Init espeak-ng FIRST so it opens its audio path before SDL3_mixer. */
+    T4K_Tts_init();
+
     /* Command-line code now in own function: */
     handle_command_args(argc, argv);
+
     /* initialize default user's options (for resolution)*/
     initialize_options_user();
     /* SDL setup in own function:*/
     initialize_SDL();
+
+    /* TTS initialized before SDL; now sync volume, voice, status, and register toggle callback */
+    T4K_Tts_set_volume(100);
+    T4K_Tts_set_voice("en");
+    T4K_Tts_set_status(Opts_GetGlobalOpt(USE_TTS));
+    /* NULL for braille: TuxMath does not support Braille output */
+    T4K_OnAccessibilityToggle(ToggleTTS, NULL);
+
     /* Read image and sound files: */
     load_data_files();
     /* Generate flipped versions of walking images */
@@ -630,8 +644,6 @@ void handle_command_args(int argc, char* argv[])
         {
 			++i;
 			my_setenv("LANGUAGE",argv[i]);
-			/* initialize Tts */
-			T4K_Tts_init();
 			T4K_Tts_set_voice(argv[i]);
         }
 
@@ -799,6 +811,15 @@ void initialize_SDL(void)
                 cleanup_on_error();
                 exit(1);
             }
+
+            T4K_SetScreen(screen);
+
+#ifdef HAVE_T4K_SETRESOLUTIONS
+            /* Sync window/fullscreen resolution info with updated t4kcommon.
+               Without this, t4kcommon defaults to 640x480 and get_scale()
+               may produce incorrect font-size scaling. */
+            T4K_SetResolutions(w, h, fs_res_x, fs_res_y);
+#endif
 
             seticon();
 

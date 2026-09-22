@@ -51,8 +51,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <dirent.h>
 // The next is for isspace
 #include <ctype.h>
+#ifndef WIN32
 // The next is for fsync
-#include <unistd.h>
+#  include <unistd.h>
+#endif
 
 
 #ifdef BUILD_MINGW32

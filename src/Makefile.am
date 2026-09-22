@@ -52,7 +52,8 @@ tuxmath_SOURCES = tuxmath.c \
 	SDL_rotozoom.c	\
 	lessons.c	\
 	server.c	\
-	mysetenv.c
+	mysetenv.c	\
+	tts_toggle.c
 
 
 # HACK "TuxMath" is the Windows program, whereas "tuxmath" is the Unix program
@@ -108,7 +109,8 @@ EXTRA_DIST = 	\
 	testclient.h	\
 	transtruct.h	\
         CMakeLists.txt  \
-	mysetenv.h
+	mysetenv.h	\
+	tts_toggle.h
         
 
 

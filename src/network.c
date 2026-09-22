@@ -37,8 +37,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <fcntl.h>
+#ifndef WIN32
+#  include <unistd.h>  /* POSIX — not available on MinGW/WIN32 */
+#  include <fcntl.h>   /* SDL3_net handles socket I/O on Windows */
+#endif
 
 #include "mathcards.h"
 #include "transtruct.h"

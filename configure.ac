@@ -249,6 +249,9 @@ AC_FUNC_STRTOD
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([__argz_count __argz_next __argz_stringify alphasort atexit basename bcopy fcntl floor fsync getcwd localeconv localtime_r memmove mempcpy memset Mix_Init mkdir munmap nl_langinfo scandir setlocale sqrt stpcpy strcasecmp strchr strcspn strdup strncasecmp strndup strrchr strstr strtoul])
 
+dnl Check for updated t4kcommon API (T4K_SetResolutions added in cross-platform update)
+AC_CHECK_FUNCS([T4K_SetResolutions])
+
 
 
 

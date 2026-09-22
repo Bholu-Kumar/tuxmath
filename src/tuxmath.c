@@ -38,6 +38,10 @@ char wrapped_lines[MAX_LINES][MAX_LINEWIDTH];
 
 int main(int argc, char* argv[])
 {
+#ifdef WIN32
+    freopen("tuxmath_error.log", "w", stderr);
+    freopen("tuxmath_output.log", "w", stdout);
+#endif
     setup(argc, argv);
     TitleScreen();  /* Run the game! */
     cleanup();

@@ -10,8 +10,17 @@
 extern void stop_tts_announcer_thread(void);
 extern void start_tts_announcer_thread(void);
 
+
 void ToggleTTS(void)
 {
+#if defined(_WIN32) || defined(WIN32)
+    static Uint32 last_toggle_time = 0;
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time - last_toggle_time < 200)
+        return;
+    last_toggle_time = current_time;
+#endif
+
     if (Opts_GetGlobalOpt(USE_TTS) == 1)
     {
         /* Stop the in-game TTS announcer thread if it is running */
@@ -19,25 +28,26 @@ void ToggleTTS(void)
         if (tts_announcer_thread)
             stop_tts_announcer_thread();
 
-        /* Announce AFTER turning off so the user can hear the confirmation */
+        /* Announce BEFORE turning off so the user can hear the confirmation */
         T4K_Tts_say(DEFAULT_VALUE, DEFAULT_VALUE, INTERRUPT,
-                     "Text to speech is disabled");
+                     _("Text to speech is disabled"));
         Opts_SetGlobalOpt(USE_TTS, 0);   /* also sets text_to_speech_status = 0 */
+        T4K_Tts_set_status(0);           /* sync DLL state */
     }
     else
     {
         Opts_SetGlobalOpt(USE_TTS, 1);   /* also sets text_to_speech_status = 1 */
-
-        /* We rely on text_to_speech_status flag logic in t4k_common to
-           automatically re-enable speech. We don't manually touch spd_connection. */
+        T4K_Tts_set_status(1);           /* sync DLL state */
+        T4K_Tts_set_voice("en");
 
         T4K_Tts_say(DEFAULT_VALUE, DEFAULT_VALUE, INTERRUPT,
-                     "Text to speech is enabled");
+                     _("Text to speech is enabled"));
     }
 
     /* Persist the new preference to the user config file */
     write_user_config_file(local_game);
 }
+
 
 int Tux_pollEvent(SDL_Event *event)
 {
