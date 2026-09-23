@@ -76,14 +76,32 @@ set(HAVE_GETTEXT ENABLE_NLS)
 # then sibling-repo fallback (typical development layout).
 # -------------------------------------------------------------------
 pkg_check_modules(T4K_COMMON t4k_common)
-if(NOT T4K_COMMON_FOUND)
-    # Fallback: look next to this repo (typical development layout)
-    set(T4K_COMMON_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../t4kcommon/src")
-    set(T4K_COMMON_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/../t4kcommon/build/src")
-    set(T4K_COMMON_LIBRARIES    "t4k_common")
-    message(STATUS "t4k_common not found via pkg-config, using fallback: ${T4K_COMMON_LIBRARY_DIRS}")
-else()
+if(T4K_COMMON_FOUND)
     set(HAVE_LIBT4K_COMMON 1)
+else()
+    # Fallback search locations: look next to this repo (standard git clone layout)
+    set(_t4k_search_dirs
+        "${CMAKE_SOURCE_DIR}/../t4kcommon"
+        "${CMAKE_SOURCE_DIR}/../t4kcommon-master"
+        "${CMAKE_SOURCE_DIR}/../../t4kcommon-master (4)/t4kcommon-master"
+    )
+    foreach(_cand ${_t4k_search_dirs})
+        if(EXISTS "${_cand}/src/t4k_common.h")
+            set(T4K_COMMON_INCLUDE_DIRS "${_cand}/src")
+            set(T4K_COMMON_LIBRARY_DIRS "${_cand}/build/src" "${_cand}/build-win/src")
+            set(T4K_COMMON_LIBRARIES    "t4k_common")
+            set(HAVE_LIBT4K_COMMON 1)
+            message(STATUS "Found t4kcommon in sibling directory: ${_cand}")
+            break()
+        endif()
+    endforeach()
+
+    if(NOT HAVE_LIBT4K_COMMON)
+        set(T4K_COMMON_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../t4kcommon/src")
+        set(T4K_COMMON_LIBRARY_DIRS "${CMAKE_SOURCE_DIR}/../t4kcommon/build/src")
+        set(T4K_COMMON_LIBRARIES    "t4k_common")
+        message(STATUS "t4k_common not found via pkg-config, using default fallback: ${T4K_COMMON_LIBRARY_DIRS}")
+    endif()
 endif()
 
 # SDL_gfx has no SDL3 port — vendored SDL_rotozoom.c is always used
