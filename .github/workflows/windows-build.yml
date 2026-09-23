@@ -1,0 +1,95 @@
+name: Windows MSYS2 Build
+
+on:
+  push:
+    branches: [ "master", "main", "windows-port" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+    - name: Set up MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-pkgconf
+          mingw-w64-ucrt-x86_64-sdl3
+          mingw-w64-ucrt-x86_64-sdl3-image
+          mingw-w64-ucrt-x86_64-sdl3-mixer
+          mingw-w64-ucrt-x86_64-sdl3-ttf
+          mingw-w64-ucrt-x86_64-sdl3-net
+          mingw-w64-ucrt-x86_64-librsvg
+          mingw-w64-ucrt-x86_64-cairo
+          mingw-w64-ucrt-x86_64-libxml2
+          mingw-w64-ucrt-x86_64-gettext
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-zlib
+          make
+
+    - name: Checkout TuxMath
+      uses: actions/checkout@v4
+      with:
+        path: tuxmath
+
+    - name: Checkout t4kcommon (Midhun-M-git/t4kcommon)
+      uses: actions/checkout@v4
+      with:
+        repository: Midhun-M-git/t4kcommon
+        ref: master
+        path: t4kcommon
+
+    - name: Build and Install t4kcommon
+      run: |
+        cd t4kcommon
+        mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/ucrt64 -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        make install
+
+    - name: Build TuxMath
+      run: |
+        cd tuxmath
+        mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/ucrt64 -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+
+    - name: Package Windows Artifacts
+      run: |
+        mkdir TuxMath-Windows
+        # TuxMath.exe and deployed data
+        cp tuxmath/build/src/TuxMath.exe TuxMath-Windows/
+        cp -r tuxmath/data TuxMath-Windows/
+
+        # libt4k_common.dll
+        if [ -f tuxmath/build/src/libt4k_common.dll ]; then
+          cp tuxmath/build/src/libt4k_common.dll TuxMath-Windows/
+        elif [ -f /ucrt64/bin/libt4k_common.dll ]; then
+          cp /ucrt64/bin/libt4k_common.dll TuxMath-Windows/
+        elif [ -f /ucrt64/lib/libt4k_common.dll ]; then
+          cp /ucrt64/lib/libt4k_common.dll TuxMath-Windows/
+        fi
+
+        # SDL3 runtime DLLs
+        cp /ucrt64/bin/SDL3*.dll TuxMath-Windows/ || true
+
+        # Launcher script
+        if [ -f tuxmath/run_tuxmath.bat ]; then
+          cp tuxmath/run_tuxmath.bat TuxMath-Windows/
+        fi
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TuxMath-Windows
+        path: TuxMath-Windows/

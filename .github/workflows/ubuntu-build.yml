@@ -1,0 +1,117 @@
+name: Ubuntu Linux Build
+
+on:
+  push:
+    branches: [ "master", "main", "windows-port" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake pkg-config \
+          libxml2-dev librsvg2-dev libcairo2-dev libpng-dev libespeak-ng-dev \
+          libjpeg-dev libwebp-dev libtiff-dev libfreetype6-dev libharfbuzz-dev \
+          libvorbis-dev libflac-dev libmpg123-dev libopusfile-dev \
+          libwayland-dev libx11-dev libxext-dev libxcursor-dev libxtst-dev \
+          libxi-dev libxinerama-dev libxrandr-dev libxss-dev libxxf86vm-dev \
+          libasound2-dev libpulse-dev libdbus-1-dev libudev-dev libgl1-mesa-dev \
+          libgles2-mesa-dev libegl1-mesa-dev libxkbcommon-dev gettext
+
+    - name: Build and Install SDL3 from Source
+      run: |
+        git clone --depth 1 https://github.com/libsdl-org/SDL.git
+        cd SDL && mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+
+    - name: Build and Install SDL3_image from Source
+      run: |
+        git clone --depth 1 https://github.com/libsdl-org/SDL_image.git
+        cd SDL_image && mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+
+    - name: Build and Install SDL3_ttf from Source
+      run: |
+        git clone --depth 1 https://github.com/libsdl-org/SDL_ttf.git
+        cd SDL_ttf && mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+
+    - name: Build and Install SDL3_mixer from Source
+      run: |
+        git clone --depth 1 https://github.com/libsdl-org/SDL_mixer.git
+        cd SDL_mixer && mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+
+    - name: Build and Install SDL3_net from Source
+      run: |
+        git clone --depth 1 https://github.com/libsdl-org/SDL_net.git
+        cd SDL_net && mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    - name: Configure Environment Variables
+      run: |
+        echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig:/usr/local/share/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    - name: Checkout t4kcommon (Midhun-M-git/t4kcommon)
+      uses: actions/checkout@v4
+      with:
+        repository: Midhun-M-git/t4kcommon
+        ref: master
+        path: t4kcommon
+
+    - name: Build and Install t4kcommon
+      run: |
+        cd t4kcommon
+        mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    - name: Checkout TuxMath
+      uses: actions/checkout@v4
+      with:
+        path: tuxmath
+
+    - name: Build TuxMath
+      run: |
+        cd tuxmath
+        mkdir build && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+
+    - name: Package Linux Artifacts
+      run: |
+        mkdir tuxmath-ubuntu
+        cp tuxmath/build/src/tuxmath tuxmath-ubuntu/
+        if [ -f tuxmath/build/src/tuxmathadmin ]; then
+          cp tuxmath/build/src/tuxmathadmin tuxmath-ubuntu/
+        fi
+        if [ -f tuxmath/build/src/generate_lesson ]; then
+          cp tuxmath/build/src/generate_lesson tuxmath-ubuntu/
+        fi
+        cp -r tuxmath/data tuxmath-ubuntu/
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tuxmath-ubuntu
+        path: tuxmath-ubuntu/

@@ -36,6 +36,15 @@ endif()
 
 if(HAVE_LIBT4K_COMMON)
     set(HAVE_LIBT4K_COMMON 1)
+    # Check if t4kcommon provides T4K_SetResolutions
+    find_file(_t4k_hdr NAMES t4k_common.h HINTS ${T4K_COMMON_INCLUDE_DIRS})
+    if(_t4k_hdr)
+        file(READ "${_t4k_hdr}" _t4k_hdr_str)
+        if(_t4k_hdr_str MATCHES "T4K_SetResolutions")
+            set(HAVE_T4K_SETRESOLUTIONS 1)
+            message(STATUS "t4k_common provides T4K_SetResolutions — enabling dynamic resolution scaling")
+        endif()
+    endif()
 else()
     set(HAVE_LIBT4K_COMMON 0)
 endif()
@@ -108,6 +117,10 @@ endif()
 
 if(HAVE_LIBT4K_COMMON)
     target_compile_definitions(${EXE_NAME} PRIVATE HAVE_LIBT4K_COMMON=1)
+endif()
+
+if(HAVE_T4K_SETRESOLUTIONS)
+    target_compile_definitions(${EXE_NAME} PRIVATE HAVE_T4K_SETRESOLUTIONS=1)
 endif()
 
 
