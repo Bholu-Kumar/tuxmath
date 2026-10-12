@@ -207,7 +207,7 @@ target_link_libraries(${EXE_NAME}
 
 # SDL3_net (optional, for LAN multiplayer)
 if(SDL3_NET_FOUND)
-    target_link_libraries(${EXE_NAME} PkgConfig::SDL3_NET)
+    target_link_libraries(${EXE_NAME} ${SDL3_NET_LIBRARIES})
     target_include_directories(${EXE_NAME} PRIVATE ${SDL3_NET_INCLUDE_DIRS})
 endif()
 
