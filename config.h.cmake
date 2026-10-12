@@ -56,13 +56,13 @@
    ------------------------------------------------------------------ */
 
 /* Define to 1 if scandir() is available */
-#cmakedefine HAVE_SCANDIR
+#cmakedefine HAVE_SCANDIR 1
 
 /* Define to 1 if alphasort() is available */
-#cmakedefine HAVE_ALPHASORT
+#cmakedefine HAVE_ALPHASORT 1
 
 /* Define to 1 if localtime_r() is available */
-#cmakedefine HAVE_LOCALTIME_R
+#cmakedefine HAVE_LOCALTIME_R 1
 
 /* ------------------------------------------------------------------
    Standard headers

@@ -230,14 +230,9 @@ if(MINGW)
     # set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 endif()
 
-# On Linux/Mac, link math library
 if(UNIX)
+    target_compile_definitions(${EXE_NAME} PRIVATE _GNU_SOURCE=1)
     target_link_libraries(${EXE_NAME} m)
-endif()
-
-# intl for Apple / build-bundled-intl path
-if(TUXMATH_BUILD_INTL)
-    target_link_libraries(${EXE_NAME} libintl.a)
 endif()
 
 # -------------------------------------------------------------------

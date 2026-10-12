@@ -38,25 +38,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #  include <SDL3/SDL.h>
 #  include <direct.h>
 #  include <windows.h>
+#elif defined(__APPLE__)
+#  include <SDL3/SDL.h>
+#  include <unistd.h>
 #endif
 
 char wrapped_lines[MAX_LINES][MAX_LINEWIDTH];
 
 int main(int argc, char* argv[])
 {
-#ifdef WIN32
-    /* On Windows (MSIX / Start-Menu launch) the working directory is NOT
-       set to the folder that contains TuxMath.exe, so DATA_PREFIX="data"
-       would resolve to the wrong place.  Use SDL_GetBasePath() to find the
-       directory that actually contains the exe and switch to it before
-       anything else touches the filesystem. Do NOT use freopen here because
-       MSIX install directories under Program Files\WindowsApps are read-only. */
+#if defined(WIN32) || defined(__APPLE__)
+    /* Set working directory to executable directory so relative paths work when launched from any CWD (e.g. MSIX or macOS bundle) */
     {
         const char *base = SDL_GetBasePath();
         if (base)
         {
+#ifdef WIN32
             _chdir(base);
             SetCurrentDirectoryA(base);
+#else
+            chdir(base);
+#endif
         }
     }
 #endif

@@ -14,7 +14,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(PACKAGE_NAME    "tuxmath")
-set(TUXMATH_VERSION "2.0.4")
+set(TUXMATH_VERSION "3.0.0")
 set(TUXMATHADMIN_VERSION "0.1.1")
 set(APP_NAME        "TuxMath")
 
@@ -59,16 +59,9 @@ endif()
 if(NOT ENABLE_NLS)
     message(STATUS "Internationalization disabled")
 endif()
-# Build bundled intl only on Apple (matches original logic)
-if(ENABLE_NLS)
-    if(APPLE)
-        set(TUXMATH_BUILD_INTL true)
-    endif()
-else()
-    set(TUXMATH_BUILD_INTL false)
-endif()
+set(TUXMATH_BUILD_INTL false)
 message(STATUS "ENABLE_NLS: ${ENABLE_NLS}")
-set(HAVE_GETTEXT ENABLE_NLS)
+set(HAVE_GETTEXT ${ENABLE_NLS})
 
 # -------------------------------------------------------------------
 # Locate libt4k_common
@@ -112,11 +105,8 @@ endif()
 # -------------------------------------------------------------------
 if(APPLE)
     set(MACOSX_BUNDLE_NAME ${APP_NAME})
-    set(TUXMATH_DATA_PREFIX "${APP_NAME}.app/Contents/Resources")
-    set(LOCALE_DIR          "${APP_NAME}.app/Contents/Resources/locale")
-    set(TUXMATH_EXTRA_INCLUDE "${CMAKE_SOURCE_DIR}/macosx")
-    set(TUXMATH_EXTRA_SRC     "${CMAKE_SOURCE_DIR}/macosx/SDLMain.m")
-    set(CMAKE_OSX_ARCHITECTURES ppc i386)
+    set(TUXMATH_DATA_PREFIX "data")
+    set(LOCALE_DIR          "data/locale")
 elseif(WIN32)
     # On Windows, data sits next to the .exe in the install directory
     set(TUXMATH_DATA_PREFIX "data")
@@ -137,6 +127,16 @@ endif()
 message(STATUS "TUXMATH_DATA_PREFIX: ${TUXMATH_DATA_PREFIX}")
 
 # -------------------------------------------------------------------
+# System symbol checks for config.h
+# -------------------------------------------------------------------
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
+check_symbol_exists(scandir "dirent.h" HAVE_SCANDIR)
+check_symbol_exists(alphasort "dirent.h" HAVE_ALPHASORT)
+check_symbol_exists(localtime_r "time.h" HAVE_LOCALTIME_R)
+unset(CMAKE_REQUIRED_DEFINITIONS)
+
+# -------------------------------------------------------------------
 # Optional SDL3_net
 # -------------------------------------------------------------------
 if(SDL3_NET_FOUND)
@@ -147,14 +147,6 @@ endif()
 # -------------------------------------------------------------------
 # Process subdirectories
 # -------------------------------------------------------------------
-if(TUXMATH_BUILD_INTL)
-    set(INTL_BINARY_DIR ${CMAKE_BINARY_DIR}/intl)
-    set(INTL_SOURCE_DIR ${CMAKE_SOURCE_DIR}/intl)
-    set(TOP_SRC_DIR     ${CMAKE_BINARY_DIR})
-    set(PREFIX          ${CMAKE_BINARY_DIR})
-    add_subdirectory(intl)
-endif()
-
 add_subdirectory(src)
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/data/CMakeLists.txt")
@@ -169,11 +161,5 @@ if(ENABLE_NLS)
     if(EXISTS "${CMAKE_SOURCE_DIR}/po/CMakeLists.txt")
         set(LOCALE_INSTALL_DIR ${CMAKE_BINARY_DIR}/src/${LOCALE_DIR})
         add_subdirectory(po)
-    endif()
-endif()
-
-if(APPLE)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/macosx/CMakeLists.txt")
-        add_subdirectory(macosx)
     endif()
 endif()
