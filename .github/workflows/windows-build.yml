@@ -35,6 +35,7 @@ jobs:
           mingw-w64-ucrt-x86_64-gettext
           mingw-w64-ucrt-x86_64-libpng
           mingw-w64-ucrt-x86_64-zlib
+          mingw-w64-ucrt-x86_64-espeak-ng
           make
 
     - name: Checkout TuxMath
@@ -80,8 +81,19 @@ jobs:
           cp /ucrt64/lib/libt4k_common.dll TuxMath-Windows/
         fi
 
-        # SDL3 runtime DLLs
-        cp /ucrt64/bin/SDL3*.dll TuxMath-Windows/ || true
+        # Copy all runtime DLLs using ldd dependency tracing
+        ldd TuxMath-Windows/TuxMath.exe | grep '\/ucrt64\/bin' | awk '{print $3}' | xargs -I '{}' cp '{}' TuxMath-Windows/ || true
+        if [ -f TuxMath-Windows/libt4k_common.dll ]; then
+          ldd TuxMath-Windows/libt4k_common.dll | grep '\/ucrt64\/bin' | awk '{print $3}' | xargs -I '{}' cp '{}' TuxMath-Windows/ || true
+        fi
+        for dll in TuxMath-Windows/*.dll; do
+          ldd "$dll" 2>/dev/null | grep '\/ucrt64\/bin' | awk '{print $3}' | xargs -I '{}' cp -u '{}' TuxMath-Windows/ 2>/dev/null || true
+        done
+
+        # espeak-ng voice data for TTS
+        if [ -d /ucrt64/share/espeak-ng-data ]; then
+          cp -r /ucrt64/share/espeak-ng-data TuxMath-Windows/espeak-ng-data
+        fi
 
         # Launcher script
         if [ -f tuxmath/run_tuxmath.bat ]; then
