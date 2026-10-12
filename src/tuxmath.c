@@ -34,13 +34,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef WIN32
+#  include <SDL3/SDL.h>
+#  include <direct.h>
+#  include <windows.h>
+#endif
+
 char wrapped_lines[MAX_LINES][MAX_LINEWIDTH];
 
 int main(int argc, char* argv[])
 {
 #ifdef WIN32
-    freopen("tuxmath_error.log", "w", stderr);
-    freopen("tuxmath_output.log", "w", stdout);
+    /* On Windows (MSIX / Start-Menu launch) the working directory is NOT
+       set to the folder that contains TuxMath.exe, so DATA_PREFIX="data"
+       would resolve to the wrong place.  Use SDL_GetBasePath() to find the
+       directory that actually contains the exe and switch to it before
+       anything else touches the filesystem. Do NOT use freopen here because
+       MSIX install directories under Program Files\WindowsApps are read-only. */
+    {
+        const char *base = SDL_GetBasePath();
+        if (base)
+        {
+            _chdir(base);
+            SetCurrentDirectoryA(base);
+        }
+    }
 #endif
     setup(argc, argv);
     TitleScreen();  /* Run the game! */
