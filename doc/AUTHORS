@@ -1,0 +1,79 @@
+Tux, of Math Command (TuxMath) Original Authors:
+-------------------------------------------------
+Bill Kendrick <bill@newbreedsoftware.com>
+Sam "Criswell" Hart <criswell@geekcomix.com>
+
+SDL3 Edition — Organization & Team:
+------------------------------------
+Organization: Zendalona <https://zendalona.com/>
+Founder:      Nalin Sathyan <Nalin.x.Linux@gmail.com>
+
+Mentors:
+  Nalin Sathyan <Nalin.x.Linux@gmail.com>
+  Mukundhan Annamalai
+  Deepak Aggarwal <deepak.aggarwal9@gmail.com>
+
+Testers:
+  Bholu Kumar D
+  Haritha D
+  Dharshin R
+
+SDL3 Migration Developers:
+  Midhun M <mmidhun781@gmail.com>         - SDL2->SDL3 migration, F5 TTS toggle,
+                                            Windows MSIX build, macOS app bundle, Ubuntu build system,
+                                            t4kcommon resolution integration
+  Bholu Kumar D <bholukumar3352@gmail.com> - SDL3 migration co-developer, F5 TTS toggle,
+                                            Windows MSYS2/CMake build, GitHub Actions CI
+
+Current Maintainers and Lead Programmers:
+-----------------------------------------
+David Bruce <davidstuartbruce@gmail.com>
+Tim Holy <tholy@wustl.edu>
+
+Coders & Contributors:
+----------------------
+Bill Kendrick <bill@newbreedsoftware.com>
+David Bruce <davidstuartbruce@gmail.com>
+Tim Holy <tholy@wustl.edu>
+Sam "Criswell" Hart <criswell@geekcomix.com>
+Jesse Andrews <jdandr2@uky.edu>
+Glen Ditchfield
+Michael Behrisch
+Donny Viszneki
+Yves Combe
+David Yoder
+Karl Ove Hufthammer
+Ahmed Sayed
+Brendan Luchen
+Jesus M. Mager H.
+Akash Gangil
+Boleslaw Kulbabinski
+Aviral Dasgupta
+Johndhel Maceda
+Midhun M <mmidhun781@gmail.com>
+Bholu Kumar D <bholukumar3352@gmail.com>
+
+Packaging & Ports:
+------------------
+Jesse Andrews <jdandr2@uky.edu>
+Holger Levsen <holger@debian.org>
+David Bruce <davidstuartbruce@gmail.com>
+Midhun M <mmidhun781@gmail.com> - (Windows MSIX package, macOS app bundle, Ubuntu build system)
+Bholu Kumar D <bholukumar3352@gmail.com> - (Windows MinGW/CMake port, GitHub Actions CI)
+
+Artists:
+--------
+Sam Hart
+Teejay DeGuzman
+Bill Kendrick
+Kendra Swanson & Linnea Holy
+Larry Ewing (creator of Tux the Penguin)
+
+Music & Sound:
+--------------
+Beyond the Horizon - Mystra of Stone Arts (1994)
+CCCP Main - Groo of CNCD (1994)
+Soft Brilliance - Tjoppbass (1994)
+Rush - Serberis
+On the Edge of the Universe - Synthaurion
+Gravity - Serberis

@@ -1,1 +1,5 @@
-For now, see doc/ChangeLog for changes and their contributors. See also `git log` and src/credits.c.
+TuxMath (SDL3 Edition)
+Developed under Zendalona <https://zendalona.com/>
+
+See doc/AUTHORS for the full list of authors, mentors, testers, and contributors.
+See doc/ChangeLog, git log, and src/credits.c for detailed history.

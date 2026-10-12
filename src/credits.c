@@ -44,6 +44,22 @@ const char credit_text[MAX_LINES][MAX_LINEWIDTH] = {
     {N_("COPYRIGHT 2001-2011")},
     {N_("VERSION ")VERSION},
     {" "},
+    {"-"N_("SDL3 EDITION & ACCESSIBILITY")},
+    {N_("DEVELOPED UNDER ZENDALONA")},
+    {"HTTPS://ZENDALONA.COM/"},
+    {" "},
+    {"-"N_("SDL3 MIGRATION DEVELOPERS")},
+    {"MIDHUN M (LEAD DEVELOPER)"},
+    {"BHOLU KUMAR D (CO-DEVELOPER)"},
+    {" "},
+    {"-"N_("MENTORS")},
+    {"NALIN SATHYAN (FOUNDER, ZENDALONA)"},
+    {"MUKUNDHAN ANNAMALAI"},
+    {"DEEPAK AGGARWAL"},
+    {" "},
+    {"-"N_("TESTERS")},
+    {"BHOLU KUMAR D, HARITHA D, DHARSHIN R"},
+    {" "},
     {N_("PART OF THE 'TUX4KIDS' PROJECT")},
     {"http://tux4kids.alioth.debian.org"},
     {" "},
@@ -398,7 +414,7 @@ int credits(void)
 	{
 		strcat(credit_tts_text,credit_text[i]);
 	}
-	strcat(credit_tts_text,"Thaks for reading \0");
+	strcat(credit_tts_text,"Thanks for reading \0");
 	//fprintf(stderr,"OUTPUT = %s \n LEN = %d",credit_tts_text,MAX_LINES*MAX_LINEWIDTH);
 	
 	T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"%s",credit_tts_text);

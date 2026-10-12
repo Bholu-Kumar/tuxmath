@@ -214,8 +214,22 @@ int handle_activity(int act, int param)
 
         case RUN_INFO:
             {
-                char msg[512];
-                snprintf(msg, sizeof(msg), _("TuxMath version %s is free and open-source!\nYou can help make it better.\nSuggestions, artwork, and code are all welcome!\nDiscuss TuxMath at tuxmath-devel@list.sourceforge.net"), VERSION);
+                char msg[1024];
+                snprintf(msg, sizeof(msg),
+                    _("TuxMath SDL3 Edition (v%s)\n\n"
+                      "Developed under Zendalona\n"
+                      "https://zendalona.com/\n\n"
+                      "SDL3 Migration Developers:\n"
+                      "Midhun M (Lead Developer)\n"
+                      "Bholu Kumar D (Co-Developer)\n\n"
+                      "Mentors:\n"
+                      "Nalin Sathyan (Founder, Zendalona)\n"
+                      "Mukundhan Annamalai\n"
+                      "Deepak Aggarwal\n\n"
+                      "Testers:\n"
+                      "Bholu Kumar D, Haritha D, Dharshin R\n\n"
+                      "TuxMath is Free Software under GNU GPL."),
+                    VERSION);
                 ShowMessageWrap(DEFAULT_MENU_FONT_SIZE, msg);
             }
             break;
