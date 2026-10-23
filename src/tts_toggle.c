@@ -53,10 +53,16 @@ int Tux_pollEvent(SDL_Event *event)
 {
     int ret = SDL_PollEvent(event);
 
-    if (ret && event->type == SDL_EVENT_KEY_DOWN)
+    if (ret)
     {
-        if (event->key.key == SDLK_F5)
-            ToggleTTS();
+        if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+            event->type = SDL_EVENT_QUIT;
+
+        if (event->type == SDL_EVENT_KEY_DOWN)
+        {
+            if (event->key.key == SDLK_F5)
+                ToggleTTS();
+        }
     }
     return ret;
 }

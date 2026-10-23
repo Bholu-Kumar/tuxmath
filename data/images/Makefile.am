@@ -13,3 +13,10 @@ SUBDIRS = backgrounds \
   title \
   tux
 
+imagesdir = $(pkgdatadir)/images
+
+dist_images_DATA = down.png \
+  left.png \
+  right.png \
+  up.png
+

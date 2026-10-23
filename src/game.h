@@ -41,6 +41,11 @@ enum {
 
 extern int user_quit_received;
 
+enum {
+    PAUSE_RESUME = 0,
+    PAUSE_QUIT   = 1
+};
+
 int pause_game(void);
 
 

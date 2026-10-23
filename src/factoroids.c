@@ -277,7 +277,12 @@ void factors(void)
 
         if (paused)
         {
-            pause_game();
+            if (pause_game() == PAUSE_QUIT)
+            {
+                escape_received = 1;
+                game_status = FF_OVER_ESCAPE;
+                break;
+            }
             paused = 0;
         }
 
@@ -349,7 +354,12 @@ void fractions(void)
 
         if (paused)
         {
-            pause_game();
+            if (pause_game() == PAUSE_QUIT)
+            {
+                escape_received = 1;
+                game_status = FF_OVER_ESCAPE;
+                break;
+            }
             paused = 0;
         }
 
@@ -395,7 +405,11 @@ static int FF_init(void)
     factoroids_intro();
 
     // Allocate memory
-    asteroid = NULL;  // set in case allocation fails partway through
+    if (asteroid != NULL)
+    {
+        free(asteroid);
+        asteroid = NULL;
+    }
     asteroid = (asteroid_type *) malloc(MAX_ASTEROIDS * sizeof(asteroid_type));
 
     if (asteroid == NULL)
@@ -929,7 +943,6 @@ static int FF_over(int game_status)
     if (GAME_OVER_WINDOW_CLOSE == game_status)
     {
         /* program exits: */
-        FF_exit_free();;
         return 1;
     }
     else
@@ -942,7 +955,11 @@ static int FF_over(int game_status)
 
 static void FF_exit_free()
 {
-    free(asteroid);
+    if (asteroid)
+    {
+        free(asteroid);
+        asteroid = NULL;
+    }
     factoroids_cleanup_graphics();
 
     /* Resume "normal" settings when we leave:
@@ -1421,9 +1438,15 @@ void game_handle_user_events(void)
             {
                 if (key == SDLK_ESCAPE)
                 {
-                    // Return to menu!
-                    escape_received = 1;
-
+                    /* [ESC]: Pause the game! If pause is disallowed, then quit */
+                    if (Opts_AllowPause())
+                    {
+                        paused = 1;
+                    }
+                    else
+                    {
+                        escape_received = 1;
+                    }
                 }
 
                 // Key press...

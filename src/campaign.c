@@ -218,12 +218,20 @@ void briefPlayer(int stage)
         textarea.h = screen->h - icon->h;
     }
     
-    char tts_text[1000];int i;
+    char tts_text[2048];
+    int i;
     tts_text[0] = '\0';
-    for(i = 0;i < MAX_LINES;i++)
+    for (i = 0; i < MAX_LINES; i++)
     {
-		strcat(tts_text,briefings[stage][i]);
-	}
+        if (briefings[stage][i])
+        {
+            size_t cur = strlen(tts_text);
+            if (cur < sizeof(tts_text) - 1)
+            {
+                strncat(tts_text, briefings[stage][i], sizeof(tts_text) - cur - 1);
+            }
+        }
+    }
 	T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,"%s",tts_text);
 
     //background is dark blue with a black text area

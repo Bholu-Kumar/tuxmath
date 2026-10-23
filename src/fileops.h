@@ -264,4 +264,6 @@ int load_image_data();
 int load_sound_data();
 #endif
 
+void cleanup_fileops(void);
+
 #endif

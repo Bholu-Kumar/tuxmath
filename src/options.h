@@ -168,6 +168,7 @@ void Opts_SetCityExplHandicap(float val);
 void Opts_SetFPSLimit(int val);
 void Opts_SetWindowWidth(int val);
 void Opts_SetWindowHeight(int val);
+void Opts_SetCustomRes(int val);
 
 
 /* whether sound system is successfully initialized and sound files loaded: */

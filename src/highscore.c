@@ -84,6 +84,7 @@ void DisplayHighScores(int level)
                 case SDL_EVENT_QUIT:
                     {
                         cleanup();
+                        exit(0);
                     }
 
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -126,8 +127,41 @@ void DisplayHighScores(int level)
 
                 case SDL_EVENT_KEY_DOWN:
                     {
-                        finished = 1;
-                        playsound(SND_TOCK);
+                        if (event.key.key == SDLK_LEFT)
+                        {
+                            if (diff_level > CADET_HIGH_SCORE)
+                            {
+                                diff_level--;
+                                if (Opts_GetGlobalOpt(MENU_SOUND))
+                                {
+                                    playsound(SND_TOCK);
+                                }
+                            }
+                        }
+                        else if (event.key.key == SDLK_RIGHT)
+                        {
+                            if (diff_level < (NUM_HIGH_SCORE_LEVELS - 1))
+                            {
+                                diff_level++;
+                                if (Opts_GetGlobalOpt(MENU_SOUND))
+                                {
+                                    playsound(SND_TOCK);
+                                }
+                            }
+                        }
+                        else if (event.key.key == SDLK_F5)
+                        {
+                            /* Handled by Tux_pollEvent - do not exit */
+                        }
+                        else if (event.key.key == SDLK_ESCAPE ||
+                                 event.key.key == SDLK_SPACE  ||
+                                 event.key.key == SDLK_RETURN ||
+                                 event.key.key == SDLK_KP_ENTER)
+                        {
+                            finished = 1;
+                            playsound(SND_TOCK);
+                        }
+                        break;
                     }
             }
         }
@@ -422,6 +456,7 @@ void NameEntry(char* pl_name, const char* s1, const char* s2, const char* s3)
                 case SDL_EVENT_QUIT:
                     {
                         cleanup();
+                        exit(0);
                     }
 
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:

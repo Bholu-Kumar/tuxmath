@@ -304,26 +304,40 @@ int initMP()
         return 1;
     }
 
-    pscores[0] = pscores[1] = pscores[2] = pscores[3] = 0;
-    pnames[0] = pnames[1] = pnames[2] = pnames[3] = NULL;
-
-    //allocate and enter player names
-    for (i = 0; i < nplayers; ++i)
-        pnames[i] = malloc((1 + 3 * HIGH_SCORE_NAME_LENGTH) * sizeof(char) );
-    for (i = 0; i < nplayers; ++i)
+    for (i = 0; i < MAX_PLAYERS; ++i)
     {
         if (pnames[i])
         {
-            if (i == 0) //First player
-                NameEntry(pnames[i], N_("Who is playing first?"), N_("Enter your name:"), NULL);
-            else //subsequent players
-                NameEntry(pnames[i], N_("Who is playing next?"), N_("Enter your name:"), NULL);
+            free(pnames[i]);
+            pnames[i] = NULL;
         }
-        else
+        pscores[i] = 0;
+    }
+
+    //allocate and enter player names
+    for (i = 0; i < nplayers; ++i)
+    {
+        pnames[i] = malloc((1 + 3 * HIGH_SCORE_NAME_LENGTH) * sizeof(char) );
+        if (!pnames[i])
         {
             fprintf(stderr, "Can't allocate name %d!\n", i);
+            for (int j = 0; j < i; ++j)
+            {
+                if (pnames[j])
+                {
+                    free(pnames[j]);
+                    pnames[j] = NULL;
+                }
+            }
             return 1;
         }
+    }
+    for (i = 0; i < nplayers; ++i)
+    {
+        if (i == 0) //First player
+            NameEntry(pnames[i], N_("Who is playing first?"), N_("Enter your name:"), NULL);
+        else //subsequent players
+            NameEntry(pnames[i], N_("Who is playing next?"), N_("Enter your name:"), NULL);
     }
 
     //enter how many rounds
@@ -343,9 +357,14 @@ void cleanupMP()
 {
     int i;
 
-    for (i = 0; i < params[PLAYERS]; ++i)
+    for (i = 0; i < MAX_PLAYERS; ++i)
+    {
         if (pnames[i])
+        {
             free(pnames[i]);
+            pnames[i] = NULL;
+        }
+    }
 
     for (i = 0; i < NUM_PARAMS; ++i)
         params[i] = 0;

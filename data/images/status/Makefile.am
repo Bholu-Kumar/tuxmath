@@ -6,6 +6,7 @@ dist_status_DATA = arrows.png \
   player_play.svg \
   demo.png \
   demo-small.png \
+  down.png \
   gameover.png \
   gameover_won.png \
   keypad_no_neg.png \
@@ -27,10 +28,12 @@ dist_status_DATA = arrows.png \
   right.svg \
   score.png \
   standby.png \
+  standby.svg \
   stop.png \
   stop.svg \
   title.png \
   tux4kids.png \
   tux4kids.svg \
+  up.png \
   player_pause.svg \
   wave.png

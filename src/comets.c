@@ -354,9 +354,13 @@ int comets_game(MC_MathGame* mgame)
         /* If we're in "PAUSE" mode, pause! */
         if (paused)
         {
-			stop_tts_announcer_thread();
-			T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,_("Game paused. Press escape or p to continue"));
-            pause_game();
+            stop_tts_announcer_thread();
+            if (pause_game() == PAUSE_QUIT)
+            {
+                user_quit_received = GAME_OVER_ESCAPE;
+                comets_status = GAME_OVER_ESCAPE;
+                break;
+            }
             paused = 0;
             start_tts_announcer_thread();
         }
@@ -380,6 +384,8 @@ int comets_game(MC_MathGame* mgame)
 
 
     comets_handle_game_over(comets_status);
+
+    stop_tts_announcer_thread();
 
     comets_cleanup();
 
@@ -477,11 +483,11 @@ int comets_initialize(void)
         Opts_SetUseFeedback(0);
     }
 
-    /* Allocate memory */
-    comets = NULL;  // set in case allocation fails partway through
-    cities = NULL;
-    penguins = NULL;
-    steam = NULL;
+    /* Free existing allocations if re-entering to prevent memory leaks */
+    if (comets != NULL || cities != NULL || penguins != NULL || steam != NULL || powerup_comet != NULL)
+    {
+        free_on_exit();
+    }
 
     comets = (comet_type *) malloc(MAX_MAX_COMETS * sizeof(comet_type));
     if (comets == NULL)
@@ -612,7 +618,16 @@ int comets_initialize(void)
 
     /* Reset remaining stuff: */
     comet_fontsize = (int)(BASE_COMET_FONTSIZE * get_scale());
-    bkgd = scaled_bkgd = NULL;
+    if (bkgd)
+    {
+        SDL_DestroySurface(bkgd);
+        bkgd = NULL;
+    }
+    if (scaled_bkgd)
+    {
+        SDL_DestroySurface(scaled_bkgd);
+        scaled_bkgd = NULL;
+    }
     last_bkgd = -1;
     reset_comets();
     reset_level();
@@ -2221,7 +2236,7 @@ void comets_handle_game_over(int game_status)
             dest_message.w = images[IMG_GAMEOVER_WON]->w;
             dest_message.h = images[IMG_GAMEOVER_WON]->h;
             
-            //stop_tts_announcer_thread();
+            stop_tts_announcer_thread();
 			T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,_("Mission Accomplished! You won!"));
             
             
@@ -2443,7 +2458,7 @@ void comets_handle_game_over(int game_status)
             ShowMessageWrap(DEFAULT_MENU_FONT_SIZE, 
                     _("Network game terminated.\n Connection with server was lost."));
             
-			//stop_tts_announcer_thread();
+			stop_tts_announcer_thread();
 			T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,
 					_("Network game terminated.\n Connection with server was lost.")); 
             break;
@@ -2455,7 +2470,7 @@ void comets_handle_game_over(int game_status)
         case GAME_OVER_LOST:
         case GAME_OVER_OTHER:
         {
-			//stop_tts_announcer_thread();
+			stop_tts_announcer_thread();
 			T4K_Tts_say(DEFAULT_VALUE,DEFAULT_VALUE,INTERRUPT,_("Game Over!"));
 			
             int looping = 1;
@@ -3003,9 +3018,15 @@ void comets_key_event(SDL_Keycode key, SDL_Keymod mod)
 
     if (key == SDLK_ESCAPE)
     {
-        /* Escape key - quit! */
-        //stop_tts_announcer_thread();
-        user_quit_received = GAME_OVER_ESCAPE;
+        /* [ESC]: Pause the game! If pause is disallowed, then quit */
+        if (Opts_AllowPause())
+        {
+            paused = 1;
+        }
+        else
+        {
+            user_quit_received = GAME_OVER_ESCAPE;
+        }
     }
     DEBUGCODE(debug_game)
     {
@@ -4003,29 +4024,38 @@ void print_current_quests(void)
 wchar_t* convert_formula_to_sentence(char *formula_string)
 {
 	wchar_t wc_formula[2000];
-	wchar_t *sentence;
-	wchar_t *ptr;
-	wchar_t *temp;
-	sentence = malloc(sizeof(wchar_t)*2000);
-	mbstowcs(wc_formula,formula_string,2000);
-	temp = wcstok(wc_formula,L" ",&ptr);
+	static wchar_t sentence[2000];
+	wchar_t *ptr = NULL;
+	wchar_t *temp = NULL;
+
+	if (!formula_string)
+		return L"";
+
+	mbstowcs(wc_formula, formula_string, 1999);
+	wc_formula[1999] = L'\0';
 	sentence[0] = L'\0';
+	temp = wcstok(wc_formula, L" ", &ptr);
 	while(temp != NULL)
 	{
-		if (wcscmp(temp,L"+") == 0)
-			wcscat(sentence,L"plus ");
-		else if (wcscmp(temp,L"-") == 0)
-			wcscat(sentence,L"minus ");
-		else if (wcscmp(temp,L"÷") == 0)
-			wcscat(sentence,L"divided by ");
-		else if (wcscmp(temp,L"x") == 0)
-			wcscat(sentence,L"Times ");
+		size_t cur_len = wcslen(sentence);
+		if (cur_len >= 1950) break;
+
+		if (wcscmp(temp, L"+") == 0)
+			wcsncat(sentence, L"plus ", 1999 - cur_len);
+		else if (wcscmp(temp, L"-") == 0)
+			wcsncat(sentence, L"minus ", 1999 - cur_len);
+		else if (wcscmp(temp, L"÷") == 0)
+			wcsncat(sentence, L"divided by ", 1999 - cur_len);
+		else if (wcscmp(temp, L"x") == 0)
+			wcsncat(sentence, L"Times ", 1999 - cur_len);
 		else
-			{
-				wcscat(sentence,temp);
-				wcscat(sentence,L" ");
-			}
-			temp = wcstok(NULL,L" ",&ptr);
+		{
+			wcsncat(sentence, temp, 1999 - cur_len);
+			cur_len = wcslen(sentence);
+			if (cur_len < 1998)
+				wcsncat(sentence, L" ", 1999 - cur_len);
+		}
+		temp = wcstok(NULL, L" ", &ptr);
 	}
 	return sentence;
 }
@@ -4168,12 +4198,18 @@ int tts_announcer(void *unused)
 SDL_Thread *tts_announcer_thread = NULL;
 
 void start_tts_announcer_thread(){
-	tts_announcer_thread = SDL_CreateThread(tts_announcer,"tts_announcer",NULL);
+	if (!tts_announcer_thread)
+		tts_announcer_thread = SDL_CreateThread(tts_announcer,"tts_announcer",NULL);
 }
 
 void stop_tts_announcer_thread(){
 	tts_announcer_switch = 0;
 	T4K_Tts_stop();
+	if (tts_announcer_thread)
+	{
+		SDL_WaitThread(tts_announcer_thread, NULL);
+		tts_announcer_thread = NULL;
+	}
 }
 
 

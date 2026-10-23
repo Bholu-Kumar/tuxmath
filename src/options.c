@@ -191,7 +191,12 @@ void Opts_Cleanup(void)
     if (game_options)
     {
         free(game_options);
-        game_options = 0;
+        game_options = NULL;
+    }
+    if (global_options)
+    {
+        free(global_options);
+        global_options = NULL;
     }
 }
 
@@ -639,7 +644,6 @@ void Opts_SetFPSLimit(int val)
 void Opts_SetWindowWidth(int val)
 {
     game_options->w_width = val;
-    game_options->custom_res = 1;
 
     if(val > 0)
     {
@@ -651,12 +655,17 @@ void Opts_SetWindowWidth(int val)
 void Opts_SetWindowHeight(int val)
 {
     game_options->w_height = val;
-    game_options->custom_res = 1;
 
     if(val > 0)
     {
         win_res_y = val;
     }
+}
+
+
+void Opts_SetCustomRes(int val)
+{
+    game_options->custom_res = val;
 }
 
 

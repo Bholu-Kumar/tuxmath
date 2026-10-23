@@ -154,9 +154,11 @@ int ConnectToServer(void)
 
             if(!LAN_AutoSetup(server_choice))
             {
+                free(servernames);
                 return 0;
             }
 
+            free(servernames);
             finished = 1;
             DEBUGMSG(debug_lan, "connected\n");
             break;
@@ -170,6 +172,7 @@ int ConnectToServer(void)
                 case SDL_EVENT_QUIT:
                     {
                         cleanup();
+                        exit(0);
                     }
 
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -316,6 +319,7 @@ int Pregame(void)
                 case SDL_EVENT_QUIT:
                     {
                         cleanup();
+                        exit(0);
                     }
 
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:

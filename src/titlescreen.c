@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "menu_lan.h"
 #include "fileops.h"
 #include "setup.h"
+#include "draw_utils.h"
 #include "tts_toggle.h"
 #include "menu.h"
 
@@ -83,6 +84,7 @@ SDL_Surface* fs_bkg = NULL;
 SDL_Surface* logo = NULL;
 sprite* Tux = NULL;
 SDL_Surface* title = NULL;
+SDL_Surface* brand_hint = NULL;
 SDL_Surface* tts_hint = NULL;
 
 /* "Easter Egg" cursor */
@@ -94,6 +96,7 @@ SDL_Rect bkg_rect,
          logo_rect,
          tux_rect,
          title_rect,
+         brand_hint_rect,
          tts_hint_rect,
          cursor,
          beak;
@@ -166,7 +169,9 @@ void TitleScreen(void)
     /* display the Standby screen */
     SDL_FillSurfaceRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
 
-    logo = T4K_LoadImage(standby_path, IMG_REGULAR);
+    logo = T4K_LoadImage(standby_path, IMG_ALPHA);
+    if (!logo)
+        logo = T4K_LoadImage(standby_path, IMG_REGULAR);
     if(logo)
     {
         /* Center horizontally and vertically */
@@ -209,17 +214,15 @@ void TitleScreen(void)
         return;
     }
 
-    /* --- wait  --- */
+    /* --- wait while draining all events so Windows message pump stays active --- */
     while ((SDL_GetTicks() - start_time) < logo_msec)
     {
-        /* Check to see if user pressed escape */
-        if (Tux_pollEvent(&event)
-                && event.type==SDL_EVENT_KEY_DOWN
-                && event.key.key == SDLK_ESCAPE)
+        while (Tux_pollEvent(&event))
         {
-            return;
+            if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+                return;
         }
-        SDL_Delay(50);
+        SDL_Delay(10);
     }
 
     /* NOTE: do we need this ? */
@@ -261,6 +264,12 @@ void TitleScreen(void)
 
         for(i = 0; i < ANIM_FRAMES; i++)
         {
+            while (Tux_pollEvent(&event))
+            {
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+                    return;
+            }
+
             /* Draw the entire background, over a black screen if necessary */
             if(current_bkg()->w != screen->w || current_bkg()->h != screen->h)
                 SDL_FillSurfaceRect(screen, NULL, 0);
@@ -277,7 +286,6 @@ void TitleScreen(void)
             SDL_BlitSurface(Tux->frame[0], NULL, screen, &tux_anim);
             SDL_BlitSurface(title, NULL, screen, &title_anim);
 
-            T4K_UpdateRect(screen, NULL);
             T4K_UpdateRect(screen, NULL);
 
             T4K_Throttle(1000/ANIM_FPS, &timer);
@@ -311,6 +319,8 @@ void DrawTitleScreen(void)
     SDL_BlitSurface(current_bkg(), NULL, screen, &bkg_rect);
     SDL_BlitSurface(Tux->frame[0], NULL, screen, &tux_rect);
     SDL_BlitSurface(title, NULL, screen, &title_rect);
+    if (brand_hint)
+        SDL_BlitSurface(brand_hint, NULL, screen, &brand_hint_rect);
     if (tts_hint)
         SDL_BlitSurface(tts_hint, NULL, screen, &tts_hint_rect);
     //T4K_UpdateRect(screen, NULL);
@@ -354,6 +364,11 @@ int RenderTitleScreen(void)
 
         /* Tux in lower left corner of the screen */
         T4K_SetRect(&tux_rect, tux_pos);
+        if (Tux)
+        {
+            T4K_FreeSprite(Tux);
+            Tux = NULL;
+        }
         Tux = T4K_LoadSpriteOfBoundingBox(tux_path, IMG_ALPHA, tux_rect.w, tux_rect.h);
         if(Tux && Tux->frame[0])
         {
@@ -368,6 +383,11 @@ int RenderTitleScreen(void)
 
         /* "Tux, of math command" title in upper right corner */
         T4K_SetRect(&title_rect, title_pos);
+        if (title)
+        {
+            SDL_DestroySurface(title);
+            title = NULL;
+        }
         title = T4K_LoadImageOfBoundingBox(title_path, IMG_ALPHA, title_rect.w, title_rect.h);
         if(title)
         {
@@ -381,6 +401,11 @@ int RenderTitleScreen(void)
         }
 
         /* easter egg */
+        if (egg)
+        {
+            SDL_DestroySurface(egg);
+            egg = NULL;
+        }
 #ifdef HAVE_RSVG
         egg = T4K_LoadImage(egg_path, IMG_ALPHA | IMG_NOT_REQUIRED);
 #else
@@ -408,6 +433,21 @@ int RenderTitleScreen(void)
             tts_hint_rect.h = tts_hint->h;
         }
 
+        if (brand_hint) {
+            SDL_DestroySurface(brand_hint);
+            brand_hint = NULL;
+        }
+        int brand_font_size = (int)(13 * get_scale());
+        if (brand_font_size < 11) brand_font_size = 11;
+        brand_hint = T4K_BlackOutline("z.TuxMath - Published by Zendalona", brand_font_size, &yellow);
+        if (brand_hint)
+        {
+            brand_hint_rect.x = title_rect.x + (title_rect.w - brand_hint->w) / 2;
+            brand_hint_rect.y = title_rect.y + title_rect.h + 4;
+            brand_hint_rect.w = brand_hint->w;
+            brand_hint_rect.h = brand_hint->h;
+        }
+
         DEBUGMSG(debug_titlescreen, "Leaving RenderTitleScreen().\n");
     }
     return 1;
@@ -421,9 +461,7 @@ int HandleTitleScreenEvents(SDL_Event* evt)
 {
     if (evt->type == SDL_EVENT_KEY_DOWN)
     {
-        if (evt->key.key == SDLK_F5)
-            ToggleTTS();
-        else if (evt->key.key == SDLK_F10)
+        if (evt->key.key == SDLK_F10)
             HandleTitleScreenResSwitch(T4K_GetScreen()->w, T4K_GetScreen()->h);
     }
 
@@ -531,6 +569,12 @@ void free_titlescreen(void)
     {
         SDL_DestroySurface(tts_hint);
         tts_hint = NULL;
+    }
+
+    if(brand_hint)
+    {
+        SDL_DestroySurface(brand_hint);
+        brand_hint = NULL;
     }
 
     if(win_bkg)
@@ -678,6 +722,7 @@ void ShowMessageWrap( int font_size, const char* str )
                     case SDL_EVENT_QUIT:
                         {
                             cleanup();
+                            exit(0);
                         }
                     case SDL_EVENT_MOUSE_BUTTON_DOWN:
                         {
@@ -763,7 +808,7 @@ void ShowMessage(int font_size, const char* str1, const char* str2,
     Uint32 timer = 0;
 
     /* To adjust font size: */
-    float scale = screen->w / 640;
+    float scale = (float)screen->w / 640.0f;
 
     s1 = s2 = s3 = s4 = NULL;
 
@@ -829,6 +874,7 @@ void ShowMessage(int font_size, const char* str1, const char* str2,
                 case SDL_EVENT_QUIT:
                     {
                         cleanup();
+                        exit(0);
                     }
 
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:

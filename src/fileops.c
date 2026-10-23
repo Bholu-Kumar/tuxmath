@@ -567,6 +567,27 @@ int parse_lesson_file_directory(void)
     int lessonIterator = 0;  //Iterator over matching files in lesson dir
     int length = 0;
     int lessons = 0;         //Iterator over accepted (& parsed) lesson files
+    /* Free previous lesson lists if already allocated to prevent memory leak on user switch/login */
+    if (lesson_list_titles)
+    {
+        for (i = 0; i < num_lessons; i++)
+        {
+            if (lesson_list_titles[i])
+                free(lesson_list_titles[i]);
+        }
+        free(lesson_list_titles);
+        lesson_list_titles = NULL;
+    }
+    if (lesson_list_filenames)
+    {
+        for (i = 0; i < num_lessons; i++)
+        {
+            if (lesson_list_filenames[i])
+                free(lesson_list_filenames[i]);
+        }
+        free(lesson_list_filenames);
+        lesson_list_filenames = NULL;
+    }
 
     num_lessons = 0;
 
@@ -631,10 +652,10 @@ int parse_lesson_file_directory(void)
             continue;
         }
         fgets_return_val = fgets(name_buf, NAME_BUF_SIZE, tempFile);
+        fclose(tempFile);
         if (fgets_return_val == NULL) {
             continue;
         }
-        fclose(tempFile);
 
 
         /* check to see if it has a \r at the end of it (dos format!) */
@@ -2446,6 +2467,51 @@ static int str_to_bool(const char* val)
         return 1;
     else
         return 0;
+}
+
+void cleanup_fileops(void)
+{
+    if (high_scores_file_path)
+    {
+        free(high_scores_file_path);
+        high_scores_file_path = NULL;
+    }
+    if (last_config_file_name)
+    {
+        free(last_config_file_name);
+        last_config_file_name = NULL;
+    }
+    if (user_data_dir)
+    {
+        free(user_data_dir);
+        user_data_dir = NULL;
+    }
+    if (lesson_list_goldstars)
+    {
+        free(lesson_list_goldstars);
+        lesson_list_goldstars = NULL;
+    }
+    if (lesson_list_titles)
+    {
+        for (int i = 0; i < num_lessons; i++)
+        {
+            if (lesson_list_titles[i])
+                free(lesson_list_titles[i]);
+        }
+        free(lesson_list_titles);
+        lesson_list_titles = NULL;
+    }
+    if (lesson_list_filenames)
+    {
+        for (int i = 0; i < num_lessons; i++)
+        {
+            if (lesson_list_filenames[i])
+                free(lesson_list_filenames[i]);
+        }
+        free(lesson_list_filenames);
+        lesson_list_filenames = NULL;
+    }
+    num_lessons = 0;
 }
 
 
