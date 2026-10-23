@@ -32,28 +32,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <ctype.h>
 
-// error.h not always available - e.g. MacOSX, BeOS:
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
+// error.h not always available - e.g. MacOSX, Windows:
 #ifdef HAVE_ERROR_H
 #include <error.h>
 #else
 # ifndef HAVE_FSYNC
-#  define fsync
+#  if defined(_WIN32)
+#   define fsync(fd) ((void)0)
+#  endif
 # endif
 # define error(status, errnum, rest...) \
-    fsync(stdout); fprintf(stderr, ## rest); exit(status)
-#endif
-
-// The next two are for mkdir and umask
-#include <sys/types.h>
-#include <sys/stat.h>
-// The next is needed for opendir
-#include <dirent.h>
-// The next is for isspace
-#include <ctype.h>
-#ifndef WIN32
-// The next is for fsync
-#  include <unistd.h>
+    fflush(stdout); fprintf(stderr, ## rest); exit(status)
 #endif
 
 

@@ -130,11 +130,15 @@ message(STATUS "TUXMATH_DATA_PREFIX: ${TUXMATH_DATA_PREFIX}")
 # System symbol checks for config.h
 # -------------------------------------------------------------------
 include(CheckSymbolExists)
+include(CheckIncludeFile)
 set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 check_symbol_exists(scandir "dirent.h" HAVE_SCANDIR)
 check_symbol_exists(alphasort "dirent.h" HAVE_ALPHASORT)
 check_symbol_exists(localtime_r "time.h" HAVE_LOCALTIME_R)
 unset(CMAKE_REQUIRED_DEFINITIONS)
+check_include_file("error.h" HAVE_ERROR_H)
+check_include_file("stdint.h" HAVE_STDINT_H)
+check_include_file("unistd.h" HAVE_UNISTD_H)
 
 # -------------------------------------------------------------------
 # Optional SDL3_net
